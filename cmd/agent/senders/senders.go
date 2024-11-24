@@ -9,7 +9,7 @@ import (
 )
 
 func SendGauge (client *http.Client, sendInfo []byte) error {
-	req, err := http.NewRequest(http.MethodPost, "/update/gauge/all/123:8080", bytes.NewBuffer([]byte(sendInfo)))
+	req, err := http.NewRequest(http.MethodPost, "/update/gauge/all/123", bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
 			return err
 		}
@@ -27,8 +27,8 @@ func SendGauge (client *http.Client, sendInfo []byte) error {
 }
 
 func SendCounter (client *http.Client, pollCount int) error {
-	counterPath := "/update/counter/PollCount/" + strconv.Itoa(pollCount) + ":8080"
-		req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer([]byte(sendInfo)))
+	counterPath := "/update/counter/PollCount/" + strconv.Itoa(pollCount)
+		req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer([]byte(strconv.Itoa(pollCount))))
 		if err != nil {
 			panic(err)
 		}

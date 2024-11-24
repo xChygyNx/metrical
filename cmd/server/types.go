@@ -8,29 +8,47 @@ type PollCount counter
 
 type RandomValue gauge
 
-type MemStorage struct {
-	gauges map[string]gauge			`json:"gauges"`
-	counters map[string]counter		`json:"counters"`
+type memStorage struct {
+	Gauges map[string]gauge			`json:"gauges"`
+	Counters map[string]counter		`json:"counters"`
 }
 
-var instance *MemStorage
+var instance *memStorage
 
-func GetMemStorage() *MemStorage {
+func GetMemStorage() *memStorage {
 	if instance == nil {
-		instance = &MemStorage{}
+		instance = &memStorage{}
 	}
 	return instance
 }
 
-func (ms *MemStorage) SetGauges(data map[string]float64) {
+func (ms *memStorage) SetGauge(mName string, mValue float64) {
+	ms.Gauges[mName] = gauge(mValue)
+}
+
+func (ms *memStorage) SetConunter(mName string, mValue int64) {
+	ms.Counters[mName] += counter(mValue)
+}
+
+func (ms *memStorage) SetGauges(data map[string]float64) {
 	for k, v := range data {
-		ms.gauges[k] = gauge(v)
+		ms.Gauges[k] = gauge(v)
 	}
 }
 
-func (ms *MemStorage) SetConunters(data map[string]float64) {
+func (ms *memStorage) GetGauge(mName string) (float64, bool){
+	metric, ok := ms.Gauges[mName]
+	return float64(metric), ok
+}
+
+func (ms *memStorage) GetCounter(mName string) (int64, bool){
+	metric, ok := ms.Counters[mName]
+	return int64(metric), ok
+}
+
+func (ms *memStorage) SetConunters(data map[string]float64) {
 	for k, v := range data {
-		ms.counters[k] += counter(v)
+		ms.Counters[k] += counter(v)
 	}
 }
 

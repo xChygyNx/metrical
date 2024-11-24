@@ -1,4 +1,4 @@
-package agent
+package main
 
 import (
 	"encoding/json"
@@ -45,7 +45,7 @@ func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
 
 func main() {
 	var pollInterval int = 2
-	var reportInterval int = 10
+	var reportInterval int = 4
 	var pollCount int
 	var memStats runtime.MemStats
 
@@ -55,7 +55,7 @@ func main() {
 		runtime.ReadMemStats(&memStats)
 		pollCount += 1
 		if time.Now().After(timeReport.Add(time.Duration(reportInterval) * time.Second)) {
-			timeReport = time.Now()
+			
 			sendInfo, err := json.Marshal(prepareStatsForSend(memStats))
 			if err != nil {
 				panic(err)
@@ -72,6 +72,7 @@ func main() {
 				panic(err)
 			}
 			pollCount = 0
+			timeReport = time.Now()
 		}
 	}
 }

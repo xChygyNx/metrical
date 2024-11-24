@@ -32,12 +32,14 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 	}
-	// storage := GetMemStorage()
+	storage := GetMemStorage()
+	storage.SetGauge(mName, mValue)
 	// _, err = json.Marshal(storage)
 	// if err != nil {
 	// 	http.Error(res, err.Error(), http.StatusInternalServerError)
 	// }
-	res.Write([]byte("Привет, я ниего не умею"))
+	msg := fmt.Sprintf("Привет, я установил метрику %s в значение %g", mName, mValue)
+	res.Write([]byte(msg))
 }
 
 func counterHandle(res http.ResponseWriter, req *http.Request) {
@@ -60,11 +62,15 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 	path = strings.Replace(path, "/", " ", -1)
 
 	var mType, mName string
-	var mValue float64
-	_, err = fmt.Sscanf(path, "%s %s %g", &mType, &mName, &mValue)
+	var mValue int64
+	_, err = fmt.Sscanf(path, "%s %s %d", &mType, &mName, &mValue)
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusInternalServerError)
 	}
 
-	res.Write([]byte("Привет, я ниего не умею"))
+	storage := GetMemStorage()
+	storage.SetConunter(mName, mValue)
+
+	msg := fmt.Sprintf("Привет, я увеличил метрику %s на %d", mName, mValue)
+	res.Write([]byte(msg))
 }
