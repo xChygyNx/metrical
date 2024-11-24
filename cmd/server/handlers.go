@@ -75,8 +75,8 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 		path = strings.Replace(path, "/", " ", -1)
 
 		var mType, mName string
-		var mValue float64
-		_, err = fmt.Sscanf(path, "%s %s %g", &mType, &mName, &mValue)
+		var mValue int64
+		_, err = fmt.Sscanf(path, "%s %s %d", &mType, &mName, &mValue)
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 		} else {
