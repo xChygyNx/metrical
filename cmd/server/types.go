@@ -9,8 +9,8 @@ type PollCount counter
 type RandomValue gauge
 
 type MemStorage struct {
-	gauges map[string]gauge			`json:"gauges"`
-	counters map[string]counter		`json:"counters"`
+	gauges   map[string]gauge   `json:"gauges"`
+	counters map[string]counter `json:"counters"`
 }
 
 var instance *MemStorage
@@ -33,4 +33,3 @@ func (ms *MemStorage) SetConunters(data map[string]float64) {
 		ms.counters[k] += counter(v)
 	}
 }
-
