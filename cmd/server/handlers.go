@@ -38,6 +38,7 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 	// 	http.Error(res, err.Error(), http.StatusInternalServerError)
 	// }
 	res.Write([]byte("Привет, я ниего не умею"))
+	res.WriteHeader(http.StatusOK)
 }
 
 func counterHandle(res http.ResponseWriter, req *http.Request) {
@@ -67,4 +68,5 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.Write([]byte("Привет, я ниего не умею"))
+	res.WriteHeader(http.StatusOK)
 }
