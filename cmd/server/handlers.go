@@ -15,13 +15,13 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 	// }
 
 	path := req.URL.Path
-	if match, err := regexp.MatchString("^/update/gauge/[a-zA-A]+", path); err != nil || !match{
+	if match, err := regexp.MatchString(`^\/update\/gauge\/[a-zA-A]+`, path); err != nil || !match {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 		} else if !match {
 			res.WriteHeader(http.StatusNotFound)
 		}
-	} else if match, err := regexp.MatchString(`^/update/gauge/[a-zA-A]+/(\d+\.\d+|\d+)$`, path); err != nil || !match {
+	} else if match, err := regexp.MatchString(`^\/update\/gauge\/[a-zA-Z]+\/(\d+\.\d+|\d+)$`, path); err != nil || !match {
 		if err != nil {
 			http.NotFound(res, req)
 		} else if !match {
@@ -46,7 +46,7 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 	res.Header().Set("Content-type", "text/plain")
-	res.Write([]byte("Привет, я ниего не умею"))
+	res.Write([]byte("Привет, я ничего не умею\n"))
 }
 
 func counterHandle(res http.ResponseWriter, req *http.Request) {
@@ -58,13 +58,13 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 
 	path := req.URL.Path
 
-	if match, err := regexp.MatchString("^/update/counter/[a-zA-A]+", path); err != nil || !match{
+	if match, err := regexp.MatchString(`^\/update\/counter\/[a-zA-A]+`, path); err != nil || !match {
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
 		} else if !match {
 			res.WriteHeader(http.StatusNotFound)
 		}
-	} else if match, err := regexp.MatchString(`^/update/counter/[a-zA-A]+/\d+$`, path); err != nil || !match {
+	} else if match, err := regexp.MatchString(`^\/update\/counter\/[a-zA-Z]+\/\d+$`, path); err != nil || !match {
 		if err != nil {
 			http.NotFound(res, req)
 		} else if !match {
@@ -84,5 +84,5 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 		}
 	}
 	res.Header().Set("Content-type", "text/plain")
-	res.Write([]byte("Привет, я ниего не умею"))
+	res.Write([]byte("Привет, я ничего не умею"))
 }

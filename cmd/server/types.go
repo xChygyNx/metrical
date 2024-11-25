@@ -51,4 +51,3 @@ func (ms *memStorage) SetConunters(data map[string]float64) {
 		ms.Counters[k] += counter(v)
 	}
 }
-
