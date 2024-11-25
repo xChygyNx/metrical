@@ -79,10 +79,10 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 		_, err = fmt.Sscanf(path, "%s %s %g", &mType, &mName, &mValue)
 		if err != nil {
 			res.WriteHeader(http.StatusInternalServerError)
-		// } else {
+		} else {
+			res.WriteHeader(http.StatusOK)
 		}
 	}
-	res.WriteHeader(http.StatusOK)
 	res.Header().Set("Content-type", "text/plain")
 	res.Write([]byte("Привет, я ничего не умею"))
 }
