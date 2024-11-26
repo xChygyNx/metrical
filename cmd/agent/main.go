@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"runtime"
-	"senders"
+	"github.com/xChygyNx/metrical/cmd/agent/senders"
 	"time"
 )
 
