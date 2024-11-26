@@ -44,8 +44,8 @@ func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
 }
 
 func main() {
-	var pollInterval int = 2
-	var reportInterval int = 4
+	var pollInterval = 2
+	var reportInterval = 4
 	var pollCount int
 	var memStats runtime.MemStats
 
