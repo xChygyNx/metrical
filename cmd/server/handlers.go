@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+func badRequestHandle(res http.ResponseWriter, req *http.Request) {
+	res.WriteHeader(http.StatusBadRequest)
+}
+
 func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 		
 	res.Header().Set("Content-type", "text/plain")
