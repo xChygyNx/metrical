@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/xChygyNx/metrical/cmd/agent/senders"
 	"math/rand"
 	"net/http"
 	"runtime"
-	"github.com/xChygyNx/metrical/cmd/agent/senders"
 	"time"
 )
 
@@ -45,7 +45,7 @@ func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
 
 func main() {
 	var pollInterval = 2
-	var reportInterval = 4
+	var reportInterval = 10
 	var pollCount int
 	var memStats runtime.MemStats
 
@@ -55,7 +55,7 @@ func main() {
 		runtime.ReadMemStats(&memStats)
 		pollCount += 1
 		if time.Now().After(timeReport.Add(time.Duration(reportInterval) * time.Second)) {
-			
+
 			sendInfo, err := json.Marshal(prepareStatsForSend(memStats))
 			if err != nil {
 				panic(err)

@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"testing"
 	"github.com/stretchr/testify/assert"
 	"runtime"
+	"testing"
 )
 
 func TestPrepareStatsForSend(t *testing.T) {
@@ -13,13 +13,13 @@ func TestPrepareStatsForSend(t *testing.T) {
 
 	runtime.ReadMemStats(&memStat)
 	stats := []string{"Alloc", "BuckHashSys", "Frees", "GCCPUFraction", "GCSys",
-					"HeapAlloc", "HeapIdle", "HeapInuse", "HeapObjects", "HeapReleased",
-					"HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys", 
-					"MSpanInuse", "Mallocs", "NextGC", "NumForcedGC", "NumGC",
-					"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
-					"TotalAlloc", "RandomValue"}
+		"HeapAlloc", "HeapIdle", "HeapInuse", "HeapObjects", "HeapReleased",
+		"HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys",
+		"MSpanInuse", "Mallocs", "NextGC", "NumForcedGC", "NumGC",
+		"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
+		"TotalAlloc", "RandomValue"}
 
-	memStats := prepareStatsForSend(memStat)					
+	memStats := prepareStatsForSend(memStat)
 	for _, stat := range stats {
 		msg = fmt.Sprintf("MemStat not contain stat %s", stat)
 		_, ok := memStats[stat]
