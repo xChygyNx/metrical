@@ -13,14 +13,14 @@ func badRequestHandle(res http.ResponseWriter, req *http.Request) {
 }
 
 func gaugeHandle(res http.ResponseWriter, req *http.Request) {
-		
+
 	res.Header().Set("Content-type", "text/plain")
 	path := req.URL.Path
 	match, err := regexp.MatchString(`^\/update\/gauge\/[a-zA-A]+`, path)
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
-	} 
+	}
 	if !match {
 		res.WriteHeader(http.StatusNotFound)
 		return
@@ -30,7 +30,7 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		res.WriteHeader(http.StatusNotFound)
 		return
-	} 
+	}
 	if !match {
 		res.WriteHeader(http.StatusBadRequest)
 		return
@@ -45,7 +45,7 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
-	} 
+	}
 	data, err := json.Marshal(map[string]string{"status": http.StatusText(http.StatusOK)})
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
@@ -64,12 +64,12 @@ func counterHandle(res http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 		return
-	} 
+	}
 	if !match {
 		res.WriteHeader(http.StatusNotFound)
 		return
 	}
-	
+
 	match, err = regexp.MatchString(`^\/update\/counter\/[a-zA-Z]+\/\d+$`, path)
 	if err != nil {
 		http.NotFound(res, req)
