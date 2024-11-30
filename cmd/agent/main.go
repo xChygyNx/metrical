@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/xChygyNx/metrical/cmd/agent/senders"
 	"math/rand"
 	"net/http"
@@ -58,18 +59,21 @@ func main() {
 
 			sendInfo, err := json.Marshal(prepareStatsForSend(memStats))
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				continue
 			}
 
 			client := &http.Client{}
 			err = senders.SendGauge(client, sendInfo)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				continue
 			}
 
 			err = senders.SendCounter(client, pollCount)
 			if err != nil {
-				panic(err)
+				fmt.Println(err)
+				continue
 			}
 			pollCount = 0
 			timeReport = time.Now()
