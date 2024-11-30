@@ -7,9 +7,16 @@ import (
 
 func routing() error {
 	router := chi.NewRouter()
-	router.Post("/", BadRequestHandle)
+	router.Post("/{url:^.+$}", BadRequestHandle)
 	router.Post("/update/gauge/{metric}/{value}", GaugeHandle)
 	router.Post("/update/counter/{metric}/{value}", CounterHandle)
+	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		_, err := w.Write([]byte("route does not exist"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
 
 	err := http.ListenAndServe(":8080", router)
 	if err != nil {
