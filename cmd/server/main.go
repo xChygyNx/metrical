@@ -7,9 +7,9 @@ import (
 
 func routing() error {
 	router := chi.NewRouter()
-	router.Post("/", BadRequestHandle)
-	router.Post("/update/gauge/{metric}/{value}", GaugeHandle)
-	router.Post("/update/counter/{metric}/{value}", CounterHandle)
+	router.Get("/", BadRequestHandle)
+	router.Get("/update/gauge/{metric}/{value}", GaugeHandle)
+	router.Get("/update/counter/{metric}/{value}", CounterHandle)
 
 	err := http.ListenAndServe(":8080", router)
 	if err != nil {
