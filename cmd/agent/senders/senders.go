@@ -17,11 +17,12 @@ func SendGauge(client *http.Client, sendInfo []byte) error {
 		return err
 	}
 	for attr, value := range mapInfo {
-		urlString := "/update/gauge/" + attr + "/" + value
+		urlString := "/update/gauge/" + attr + "/" + value + ":8080"
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
 			return err
 		}
+		req.Header.Set("Content-Type", "text/plain")
 		resp, err := client.Do(req)
 		if err != nil {
 			return err
@@ -41,7 +42,7 @@ func SendGauge(client *http.Client, sendInfo []byte) error {
 }
 
 func SendCounter(client *http.Client, pollCount int) error {
-	counterPath := "/update/counter/PollCount/" + strconv.Itoa(pollCount)
+	counterPath := "/update/counter/PollCount/" + strconv.Itoa(pollCount) + ":8080"
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer([]byte(strconv.Itoa(pollCount))))
 	if err != nil {
 		panic(err)
