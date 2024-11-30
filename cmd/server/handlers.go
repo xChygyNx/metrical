@@ -7,8 +7,8 @@ import (
 	"strconv"
 )
 
-func BadRequestHandle(res http.ResponseWriter, req *http.Request) {
-	res.WriteHeader(http.StatusBadRequest)
+func NotFoundHandle(res http.ResponseWriter, req *http.Request) {
+	res.WriteHeader(http.StatusNotFound)
 }
 
 func GaugeHandle(res http.ResponseWriter, req *http.Request) {

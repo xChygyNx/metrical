@@ -7,7 +7,8 @@ import (
 
 func routing() error {
 	router := chi.NewRouter()
-	router.Post("/{url:^.+$}", BadRequestHandle)
+	router.Post("/update/gauge/", NotFoundHandle)
+	router.Post("/update/counter/", NotFoundHandle)
 	router.Post("/update/gauge/{metric}/{value}", GaugeHandle)
 	router.Post("/update/counter/{metric}/{value}", CounterHandle)
 	router.NotFound(func(w http.ResponseWriter, r *http.Request) {
