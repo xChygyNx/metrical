@@ -21,7 +21,7 @@ func GaugeHandle(res http.ResponseWriter, req *http.Request) {
 	}
 	valueStr := chi.URLParam(req, "value")
 	if valueStr == "" {
-		http.Error(res, "Value of metric is missed", http.StatusBadRequest)
+		http.Error(res, "Value of metric is missed", http.StatusNotFound)
 		return
 	}
 	_, err := strconv.ParseFloat(valueStr, 64)
@@ -56,7 +56,7 @@ func CounterHandle(res http.ResponseWriter, req *http.Request) {
 	}
 	valueStr := chi.URLParam(req, "value")
 	if valueStr == "" {
-		http.Error(res, "Value of metric is missed", http.StatusBadRequest)
+		http.Error(res, "Value of metric is missed", http.StatusNotFound)
 		return
 	}
 	_, err := strconv.Atoi(valueStr)
