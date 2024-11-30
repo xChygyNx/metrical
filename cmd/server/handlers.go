@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"net/http"
+	"strconv"
 )
 
 func BadRequestHandle(res http.ResponseWriter, req *http.Request) {
@@ -18,18 +19,30 @@ func GaugeHandle(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Metric param is missed", http.StatusInternalServerError)
 		return
 	}
-	value := chi.URLParam(req, "value")
-	if value == "" {
+	valueStr := chi.URLParam(req, "value")
+	if valueStr == "" {
 		http.Error(res, "Value of metric is missed", http.StatusBadRequest)
 		return
 	}
+	_, err := strconv.ParseFloat(valueStr, 64)
+	if err != nil {
+		http.Error(res, "Value of metric must be numeric, got "+valueStr, http.StatusBadRequest)
+		return
+	}
 
-	data, err := json.Marshal(map[string]string{"status": http.StatusText(http.StatusOK)})
+	data, err := json.Marshal(map[string]string{
+		"status": http.StatusText(http.StatusOK),
+		"metric": metric,
+		"value":  valueStr,
+	})
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 	} else {
 		res.WriteHeader(http.StatusOK)
-		res.Write([]byte(data))
+		_, err := res.Write([]byte(data))
+		if err != nil {
+			http.Error(res, "Internal error", http.StatusInternalServerError)
+		}
 	}
 }
 
@@ -41,17 +54,29 @@ func CounterHandle(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Metric param is missed", http.StatusInternalServerError)
 		return
 	}
-	value := chi.URLParam(req, "value")
-	if value == "" {
+	valueStr := chi.URLParam(req, "value")
+	if valueStr == "" {
 		http.Error(res, "Value of metric is missed", http.StatusBadRequest)
 		return
 	}
+	_, err := strconv.Atoi(valueStr)
+	if err != nil {
+		http.Error(res, "Value of metric must be integer, got "+valueStr, http.StatusBadRequest)
+		return
+	}
 
-	data, err := json.Marshal(map[string]string{"status": http.StatusText(http.StatusOK)})
+	data, err := json.Marshal(map[string]string{
+		"status": http.StatusText(http.StatusOK),
+		"metric": metric,
+		"value":  valueStr,
+	})
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
 	} else {
 		res.WriteHeader(http.StatusOK)
-		res.Write([]byte(data))
+		_, err := res.Write([]byte(data))
+		if err != nil {
+			http.Error(res, "Internal error", http.StatusInternalServerError)
+		}
 	}
 }
