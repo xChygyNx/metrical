@@ -27,7 +27,7 @@ func TestStatusGaugeHandler(t *testing.T) {
 			url:  "/something/other/value",
 			want: want{
 				code:        http.StatusNotFound,
-				response:    fmt.Sprintf(`{"status":"%s"}`, http.StatusText(http.StatusOK)),
+				response:    "",
 				contentType: "text/plain",
 			},
 		},
@@ -35,8 +35,9 @@ func TestStatusGaugeHandler(t *testing.T) {
 			name: "Correct path",
 			url:  "/update/gauge/someMetric/100.123",
 			want: want{
-				code:        http.StatusOK,
-				response:    fmt.Sprintf(`{"status":"%s"}`, http.StatusText(http.StatusOK)),
+				code: http.StatusOK,
+				response: fmt.Sprintf(`{"status":"%s", "metric":"%s", "value":"%s"}`,
+					http.StatusText(http.StatusOK), "someMetric", "100.123"),
 				contentType: "text/plain",
 			},
 		},
@@ -45,7 +46,7 @@ func TestStatusGaugeHandler(t *testing.T) {
 			url:  "/update/gauge/100.123",
 			want: want{
 				code:        http.StatusNotFound,
-				response:    fmt.Sprintf(`{"status":"%s"}`, http.StatusText(http.StatusNotFound)),
+				response:    "",
 				contentType: "text/plain",
 			},
 		},
@@ -53,8 +54,8 @@ func TestStatusGaugeHandler(t *testing.T) {
 			name: "Too much long path",
 			url:  "/update/gauge/someMetric/100.123/needlessInformation",
 			want: want{
-				code:        http.StatusBadRequest,
-				response:    fmt.Sprintf(`{"status":"%s"}`, http.StatusText(http.StatusNotFound)),
+				code:        http.StatusNotFound,
+				response:    "",
 				contentType: "text/plain",
 			},
 		},
