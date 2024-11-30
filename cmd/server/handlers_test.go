@@ -63,7 +63,7 @@ func TestStatusGaugeHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
 			w := httptest.NewRecorder()
-			gaugeHandle(w, request)
+			GaugeHandle(w, request)
 
 			result := w.Result()
 
@@ -132,7 +132,7 @@ func TestStatusCounterHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
 			w := httptest.NewRecorder()
-			counterHandle(w, request)
+			CounterHandle(w, request)
 
 			result := w.Result()
 
