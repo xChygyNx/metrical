@@ -46,7 +46,7 @@ func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
 
 func main() {
 	var pollInterval = 2
-	var reportInterval = 10
+	var reportInterval = 2
 	var pollCount int
 	var memStats runtime.MemStats
 
@@ -62,11 +62,11 @@ func main() {
 				fmt.Println(err)
 				continue
 			}
-
+			fmt.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
 			err = senders.SendGauge(client, sendInfo)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Printf("error: %v\n", err)
 				continue
 			}
 

@@ -10,14 +10,15 @@ import (
 	"strconv"
 )
 
-func SendGauge(client *http.Client, sendInfo []byte) error {
-	var mapInfo map[string]string
-	err := json.Unmarshal(sendInfo, &mapInfo)
+func SendGauge(client *http.Client, sendInfo []uint8) error {
+	var mapInfo map[string]float64
+	fmt.Println(string(sendInfo))
+	err := json.Unmarshal([]byte(sendInfo), &mapInfo)
 	if err != nil {
 		return err
 	}
 	for attr, value := range mapInfo {
-		urlString := "/update/gauge/" + attr + "/" + value + ":8080"
+		urlString := "http://localhost/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64) + ":8080"
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
 			return err
@@ -42,7 +43,7 @@ func SendGauge(client *http.Client, sendInfo []byte) error {
 }
 
 func SendCounter(client *http.Client, pollCount int) error {
-	counterPath := "/update/counter/PollCount/" + strconv.Itoa(pollCount) + ":8080"
+	counterPath := "http://localhost/update/counter/PollCount/" + strconv.Itoa(pollCount) + ":8080"
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer([]byte(strconv.Itoa(pollCount))))
 	if err != nil {
 		panic(err)
