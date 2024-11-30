@@ -6,9 +6,9 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", badRequestHandle)
-	mux.HandleFunc("/update/gauge/", gaugeHandle)
-	mux.HandleFunc("/update/counter/", counterHandle)
+	mux.HandleFunc("/", BadRequestHandle)
+	mux.HandleFunc("/update/gauge/", GaugeHandle)
+	mux.HandleFunc("/update/counter/", CounterHandle)
 	err := http.ListenAndServe(":8080", mux)
 	if err != nil {
 		panic(err)

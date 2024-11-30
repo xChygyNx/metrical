@@ -8,11 +8,11 @@ import (
 	"strings"
 )
 
-func badRequestHandle(res http.ResponseWriter, req *http.Request) {
+func BadRequestHandle(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusBadRequest)
 }
 
-func gaugeHandle(res http.ResponseWriter, req *http.Request) {
+func GaugeHandle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-type", "text/plain")
 	path := req.URL.Path
@@ -55,7 +55,7 @@ func gaugeHandle(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
-func counterHandle(res http.ResponseWriter, req *http.Request) {
+func CounterHandle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-type", "text/plain")
 	path := req.URL.Path
