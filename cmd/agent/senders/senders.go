@@ -12,13 +12,12 @@ import (
 
 func SendGauge(client *http.Client, sendInfo []uint8) error {
 	var mapInfo map[string]float64
-	fmt.Println(string(sendInfo))
 	err := json.Unmarshal([]byte(sendInfo), &mapInfo)
 	if err != nil {
 		return err
 	}
 	for attr, value := range mapInfo {
-		urlString := "http://localhost/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64) + ":8080"
+		urlString := "http://localhost/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64)
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
 			return err
