@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
@@ -19,7 +20,10 @@ func routing() error {
 		}
 	})
 
-	err := http.ListenAndServe(":8080", router)
+	serverAddr := parseFlag()
+	serverAddrStr := fmt.Sprintf("%s:%d", serverAddr.Host, serverAddr.Port)
+
+	err := http.ListenAndServe(serverAddrStr, router)
 	if err != nil {
 		return err
 	}
