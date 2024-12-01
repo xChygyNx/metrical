@@ -1,4 +1,4 @@
-package senders
+package main
 
 import (
 	"bytes"
@@ -10,14 +10,14 @@ import (
 	"strconv"
 )
 
-func SendGauge(client *http.Client, sendInfo []uint8) error {
+func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) error {
 	var mapInfo map[string]float64
 	err := json.Unmarshal([]byte(sendInfo), &mapInfo)
 	if err != nil {
 		return err
 	}
 	for attr, value := range mapInfo {
-		urlString := "http://localhost:8080/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+		urlString := "http://" + fmt.Sprint(hostAddr) + "/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64)
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
 			return err
@@ -41,8 +41,8 @@ func SendGauge(client *http.Client, sendInfo []uint8) error {
 	return nil
 }
 
-func SendCounter(client *http.Client, pollCount int) error {
-	counterPath := "http://localhost:8080/update/counter/PollCount/" + strconv.Itoa(pollCount)
+func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) error {
+	counterPath := "http://" + fmt.Sprint(hostAddr) + "/update/counter/PollCount/" + strconv.Itoa(pollCount) + ":8080"
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer([]byte(strconv.Itoa(pollCount))))
 	if err != nil {
 		panic(err)
