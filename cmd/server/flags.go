@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"strconv"
@@ -20,7 +19,7 @@ func (hp *HostPort) String() string {
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
 	if len(hostPort) != 2 {
-		return errors.New(fmt.Sprintf("Must be vlue like <Host>:<Port>, got %s", value))
+		return fmt.Errorf("must be value like <Host>:<Port>, got %s", value)
 	}
 	port, err := strconv.Atoi(hostPort[1])
 	if err != nil {
