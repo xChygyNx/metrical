@@ -45,14 +45,16 @@ func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
 }
 
 func main() {
-	var pollInterval = 2
-	var reportInterval = 2
 	var pollCount int
 	var memStats runtime.MemStats
 
+	agentConfig := parseFlag()
+	pollInterval := agentConfig.PollInterval
+	reportInterval := agentConfig.ReportInterval
+
 	timeReport := time.Now()
 	for {
-		time.Sleep(time.Duration(time.Second * time.Duration(pollInterval)))
+		time.Sleep(time.Second * time.Duration(pollInterval))
 		runtime.ReadMemStats(&memStats)
 		pollCount += 1
 		if time.Now().After(timeReport.Add(time.Duration(reportInterval) * time.Second)) {
