@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-chi/chi/v5"
 	"net/http"
 )
@@ -20,10 +19,12 @@ func routing() error {
 		}
 	})
 
-	serverAddr := parseFlag()
-	serverAddrStr := fmt.Sprintf("%s:%d", serverAddr.Host, serverAddr.Port)
+	config, err := getConfig()
+	if err != nil {
+		return err
+	}
 
-	err := http.ListenAndServe(serverAddrStr, router)
+	err = http.ListenAndServe(config.hostAddr.String(), router)
 	if err != nil {
 		return err
 	}
