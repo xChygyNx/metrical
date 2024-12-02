@@ -49,7 +49,7 @@ func TestStatusMetricHandler(t *testing.T) {
 			url:  "/update/gauge/someMetric/none",
 			want: want{
 				code:        http.StatusBadRequest,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
@@ -57,7 +57,7 @@ func TestStatusMetricHandler(t *testing.T) {
 			url:  "/update/counter/someMetric/none",
 			want: want{
 				code:        http.StatusBadRequest,
-				contentType: "text/plain",
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}
