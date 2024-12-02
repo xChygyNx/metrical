@@ -9,8 +9,8 @@ type PollCount counter
 type RandomValue gauge
 
 type memStorage struct {
-	Gauges map[string]gauge			`json:"gauges"`
-	Counters map[string]counter		`json:"counters"`
+	Gauges		map[string]gauge			`json:"gauges"`
+	Counters	map[string]counter			`json:"counters"`
 }
 
 var instance *memStorage
@@ -18,6 +18,8 @@ var instance *memStorage
 func GetMemStorage() *memStorage {
 	if instance == nil {
 		instance = &memStorage{}
+		instance.Gauges = map[string]gauge{}
+		instance.Counters = map[string]counter{}
 	}
 	return instance
 }
