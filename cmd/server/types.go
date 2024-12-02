@@ -18,8 +18,8 @@ var instance *memStorage
 func GetMemStorage() *memStorage {
 	if instance == nil {
 		instance = &memStorage{}
-		instance.Gauges = make(map[string]gauge)
-		instance.Counters = make(map[string]counter)
+		instance.Gauges = map[string]gauge{}
+		instance.Counters = map[string]counter{}
 	}
 	return instance
 }
