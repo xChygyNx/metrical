@@ -21,7 +21,7 @@ func parseCounterMetricValue(value string) error {
 }
 
 func parseMetricValue(value string, mType string) (err error) {
-	switch value {
+	switch mType {
 	case "gauge":
 		err = parseGaugeMetricValue(value)
 	case "counter":
