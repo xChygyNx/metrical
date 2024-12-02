@@ -49,10 +49,10 @@ func TestSetGauge(t *testing.T) {
 
 func TestGetGauge(t *testing.T) {
 	storage := GetMemStorage()
-	exist_metric := "exist_metric"
-	not_exist_metric := "not_exist_metric"
+	existMetric := "exist_metric"
+	notExistMetric := "not_exist_metric"
 	val := 10.789
-	storage.Gauges[exist_metric] = gauge(val)
+	storage.Gauges[existMetric] = gauge(val)
 	tests := []struct {
 		name 	string
 		metcic  string
@@ -61,21 +61,21 @@ func TestGetGauge(t *testing.T) {
 	}{
 		{
 			name: "Get exists Gauge metric",
-			metcic:  exist_metric,
+			metcic:  existMetric,
 			want: val,
 			ok: true,
 		},
 		{
 			name: "Get not exists Gauge metric",
-			metcic:  not_exist_metric,
+			metcic:  notExistMetric,
 			want: 0,
 			ok: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gauge_val, ok := storage.GetGauge(test.metcic)
-			assert.Equal(t, test.want, gauge_val)
+			gaugeVal, ok := storage.GetGauge(test.metcic)
+			assert.Equal(t, test.want, gaugeVal)
 			assert.Equal(t, test.ok, ok)
 		})
 	}
@@ -124,10 +124,10 @@ func TestSetCounter(t *testing.T) {
 
 func TestGetCounter(t *testing.T) {
 	storage := GetMemStorage()
-	exist_metric := "exist_metric"
-	not_exist_metric := "not_exist_metric"
+	existMetric := "exist_metric"
+	notExistMetric := "not_exist_metric"
 	var val int64 = 10
-	storage.Counters[exist_metric] = counter(val)
+	storage.Counters[existMetric] = counter(val)
 	tests := []struct {
 		name 	string
 		metcic  string
@@ -136,21 +136,21 @@ func TestGetCounter(t *testing.T) {
 	}{
 		{
 			name: "Get exists Gauge metric",
-			metcic:  exist_metric,
+			metcic:  existMetric,
 			want: val,
 			ok: true,
 		},
 		{
 			name: "Get not exists Gauge metric",
-			metcic:  not_exist_metric,
+			metcic:  notExistMetric,
 			want: 0,
 			ok: false,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			gauge_val, ok := storage.GetCounter(test.metcic)
-			assert.Equal(t, test.want, gauge_val)
+			counterVal, ok := storage.GetCounter(test.metcic)
+			assert.Equal(t, test.want, counterVal)
 			assert.Equal(t, test.ok, ok)
 		})
 	}
