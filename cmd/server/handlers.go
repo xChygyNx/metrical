@@ -39,7 +39,7 @@ func MetricHandle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 	if !match {
-		http.Error(res, "Incorrect metric value, must be numerical", http.StatusNotFound)
+		http.Error(res, "Incorrect metric value, must be numerical", http.StatusBadRequest)
 		return
 	}
 

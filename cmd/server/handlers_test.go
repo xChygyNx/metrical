@@ -29,7 +29,7 @@ func TestStatusMetricHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Correct counter path",
+			name: "Correct gauge path",
 			url:  "/update/gauge/someMetric/100.123",
 			want: want{
 				code:        http.StatusOK,
@@ -37,10 +37,26 @@ func TestStatusMetricHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Correct path",
+			name: "Correct counter path",
 			url:  "/update/counter/someMetric/100",
 			want: want{
 				code:        http.StatusOK,
+				contentType: "text/plain",
+			},
+		},
+		{
+			name: "Incorrect gauge value",
+			url:  "/update/gauge/someMetric/none",
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: "text/plain",
+			},
+		},
+		{
+			name: "Incorrect counter value",
+			url:  "/update/counter/someMetric/none",
+			want: want{
+				code:        http.StatusBadRequest,
 				contentType: "text/plain",
 			},
 		},
