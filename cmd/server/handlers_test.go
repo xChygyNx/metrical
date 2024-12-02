@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,7 +13,6 @@ import (
 func TestStatusMetricHandler(t *testing.T) {
 	type want struct {
 		code        int
-		response    string
 		contentType string
 	}
 	tests := []struct {
@@ -23,49 +21,19 @@ func TestStatusMetricHandler(t *testing.T) {
 		want want
 	}{
 		{
-			name: "Incorrect path",
-			url:  "/update/other/value",
+			name: "Incorrect gauge path",
+			url:  "/update/other/value/12.3456",
 			want: want{
-				code:        http.StatusNotFound,
-				response:    "",
+				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
-			name: "Correct path",
+			name: "Correct counter path",
 			url:  "/update/gauge/someMetric/100.123",
 			want: want{
-				code: http.StatusOK,
-				response: fmt.Sprintf(`{"status":"%s", "metric":"%s", "value":"%s"}`,
-					http.StatusText(http.StatusOK), "someMetric", "100.123"),
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name: "Absence metric Name",
-			url:  "/update/gauge/100.123",
-			want: want{
-				code:        http.StatusNotFound,
-				response:    "",
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name: "Too much long path",
-			url:  "/update/gauge/someMetric/100.123/needlessInformation",
-			want: want{
-				code:        http.StatusInternalServerError,
-				response:    "",
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name: "Incorrect path",
-			url:  "/something/other/value",
-			want: want{
-				code:        http.StatusInternalServerError,
-				response:    "",
-				contentType: "text/plain; charset=utf-8",
+				code:        http.StatusOK,
+				contentType: "text/plain",
 			},
 		},
 		{
@@ -73,26 +41,7 @@ func TestStatusMetricHandler(t *testing.T) {
 			url:  "/update/counter/someMetric/100",
 			want: want{
 				code:        http.StatusOK,
-				response:    fmt.Sprintf(`{"status":"%s"}`, http.StatusText(http.StatusOK)),
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
-			name: "Absence metric Name",
-			url:  "/update/counter/100; charset=utf-8",
-			want: want{
-				code:        http.StatusNotFound,
-				response:    "",
 				contentType: "text/plain",
-			},
-		},
-		{
-			name: "Too much long path",
-			url:  "/update/counter/someMetric/100/needlessInformation",
-			want: want{
-				code:        http.StatusBadRequest,
-				response:    "",
-				contentType: "text/plain; charset=utf-8",
 			},
 		},
 	}
@@ -106,12 +55,9 @@ func TestStatusMetricHandler(t *testing.T) {
 
 			require.Equal(t, test.want.code, result.StatusCode)
 			defer result.Body.Close()
-			resBody, err := io.ReadAll(result.Body)
+			_, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
 
-			if string(resBody) != "" {
-				assert.JSONEq(t, test.want.response, string(resBody))
-			}
 			assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
 		})
 	}

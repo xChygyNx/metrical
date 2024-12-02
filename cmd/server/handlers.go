@@ -4,59 +4,60 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"slices"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
+	"regexp"
+	"strings"
 )
-
-func parseGaugeMetricValue(value string) error {
-	_, err := strconv.ParseFloat(value, 64)
-	return err
-}
-
-func parseCounterMetricValue(value string) error {
-	_, err := strconv.Atoi(value)
-	return err
-}
-
-func parseMetricValue(value string, mType string) (err error) {
-	switch mType {
-	case "gauge":
-		err = parseGaugeMetricValue(value)
-	case "counter":
-		err = parseCounterMetricValue(value)
-	}
-	return
-}
 
 func MetricHandle(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("Content-type", "text/plain")
-	metric := chi.URLParam(req, "metric")
-	if metric == "" {
-		http.Error(res, "Metric param is missed", http.StatusInternalServerError)
-		return
-	}
-	mType := chi.URLParam(req, "mType")
-	if found := slices.Contains([]string{"gauge", "counter"}, mType); !found {
-		http.Error(res, fmt.Sprintf("Type of metric is %s, must be {gauge, counter}", mType), http.StatusBadRequest)
-	}
-	valueStr := chi.URLParam(req, "value")
-	if valueStr == "" {
-		http.Error(res, "Value of metric is missed", http.StatusNotFound)
-		return
-	}
-	err := parseMetricValue(valueStr, mType)
+	path := req.URL.Path
+
+	match, err := regexp.MatchString(`^\/update\/(gauge|counter)`, path)
 	if err != nil {
-		http.Error(res, "Value of metric must be numeric, got "+valueStr, http.StatusBadRequest)
+		http.Error(res, "Internal Server error", http.StatusInternalServerError)
+		return
+	}
+	if !match {
+		http.Error(res, "Unknown metric type, must be gauge or counter", http.StatusBadRequest)
+		return
+	}
+
+	match, err = regexp.MatchString(`^\/update\/(gauge|counter)/[a-zA-Z]+`, path)
+	if err != nil {
+		http.Error(res, "Internal Server error", http.StatusInternalServerError)
+		return
+	}
+	if !match {
+		http.Error(res, "Incorrect metric name, must contains only from alphabetical symbols", http.StatusNotFound)
+		return
+	}
+
+	match, err = regexp.MatchString(`^\/update\/(gauge|counter)/[a-zA-Z]+\/(\d+\.\d+|\d+)$`, path)
+	if err != nil {
+		http.Error(res, "Internal Server error", http.StatusInternalServerError)
+		return
+	}
+	if !match {
+		http.Error(res, "Incorrect metric value, must be numerical", http.StatusNotFound)
+		return
+	}
+
+	path = strings.Replace(path, "/update/", "", 1)
+	path = strings.Replace(path, "/", " ", -1)
+
+	var mType, mName, valueStr string
+	_, err = fmt.Sscanf(path, "%s %s %s", &mType, &mName, &valueStr)
+	if err != nil {
+		http.Error(res, "Internal Server error", http.StatusInternalServerError)
 		return
 	}
 
 	data, err := json.Marshal(map[string]string{
-		"status": http.StatusText(http.StatusOK),
-		"metric": metric,
-		"value":  valueStr,
+		"status":      http.StatusText(http.StatusOK),
+		"metricType":  mType,
+		"metricName":  mName,
+		"metricValue": valueStr,
 	})
 	if err != nil {
 		res.WriteHeader(http.StatusInternalServerError)
