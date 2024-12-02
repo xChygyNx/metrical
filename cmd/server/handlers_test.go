@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStatusGaugeHandler(t *testing.T) {
+func TestStatusMetricHandler(t *testing.T) {
 	type want struct {
 		code        int
 		response    string
@@ -24,7 +24,7 @@ func TestStatusGaugeHandler(t *testing.T) {
 	}{
 		{
 			name: "Incorrect path",
-			url:  "/something/other/value",
+			url:  "/update/other/value",
 			want: want{
 				code:        http.StatusNotFound,
 				response:    "",
@@ -59,39 +59,6 @@ func TestStatusGaugeHandler(t *testing.T) {
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, test.url, nil)
-			w := httptest.NewRecorder()
-			GaugeHandle(w, request)
-
-			result := w.Result()
-
-			assert.Equal(t, test.want.code, result.StatusCode)
-			defer result.Body.Close()
-			resBody, err := io.ReadAll(result.Body)
-			require.NoError(t, err)
-
-			if string(resBody) != "" {
-				assert.JSONEq(t, test.want.response, string(resBody))
-			}
-			assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
-		})
-	}
-}
-
-func TestStatusCounterHandler(t *testing.T) {
-	type want struct {
-		code        int
-		response    string
-		contentType string
-	}
-	tests := []struct {
-		name string
-		url  string
-		want want
-	}{
 		{
 			name: "Incorrect path",
 			url:  "/something/other/value",
@@ -133,15 +100,15 @@ func TestStatusCounterHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
 			w := httptest.NewRecorder()
-			CounterHandle(w, request)
+			MetricHandle(w, request)
 
 			result := w.Result()
 
-			assert.Equal(t, test.want.code, result.StatusCode)
+			require.Equal(t, test.want.code, result.StatusCode)
 			defer result.Body.Close()
 			resBody, err := io.ReadAll(result.Body)
-
 			require.NoError(t, err)
+
 			if string(resBody) != "" {
 				assert.JSONEq(t, test.want.response, string(resBody))
 			}
