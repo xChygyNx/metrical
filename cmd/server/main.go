@@ -12,10 +12,12 @@ func routing() error {
 	router.Get("/value/{mType}/{metric}", GetMetricHandle)
 	router.Get("/", ListMetricHandle)
 
-	serverAddr := parseFlag()
-	serverAddrStr := serverAddr.String()
+	config, err := getConfig()
+	if err != nil {
+		return err
+	}
 
-	err := http.ListenAndServe(serverAddrStr, router)
+	err = http.ListenAndServe(config.hostAddr.String(), router)
 	if err != nil {
 		return err
 	}
