@@ -152,13 +152,15 @@ func GetMetricHandle(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	switch valueInterface.(type) {
+	switch valueType := valueInterface.(type) {
 	case int64:
+		fmt.Printf("Got value with type %T", valueType)
 		_, err = res.Write([]byte(strconv.FormatInt(valueInterface.(int64), 10)))
 		if err != nil {
 			http.Error(res, "Internal error", http.StatusInternalServerError)
 		}
 	case float64:
+		fmt.Printf("Got value with type %T", valueType)
 		_, err = res.Write([]byte(strconv.FormatFloat(valueInterface.(float64), 'f', -1, 64)))
 		if err != nil {
 			http.Error(res, "Internal error", http.StatusInternalServerError)
