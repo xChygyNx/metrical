@@ -14,7 +14,7 @@ func routing() error {
 	router.Get("/", ListMetricHandle)
 
 	serverAddr := parseFlag()
-	serverAddrStr := fmt.Sprintf("%s:%d", serverAddr.Host, serverAddr.Port)
+	serverAddrStr := fmt.Sprintf("http://%s:%d", serverAddr.Host, serverAddr.Port)
 
 	err := http.ListenAndServe(serverAddrStr, router)
 	if err != nil {
