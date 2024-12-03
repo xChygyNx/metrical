@@ -65,13 +65,13 @@ func main() {
 			}
 			fmt.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
-			err = SendGauge(client, sendInfo)
+			err = SendGauge(client, sendInfo, agentConfig.HostPort.String())
 			if err != nil {
 				fmt.Printf("error: %v\n", err)
 				continue
 			}
 
-			err = SendCounter(client, pollCount)
+			err = SendCounter(client, pollCount, agentConfig.HostPort.String())
 			if err != nil {
 				fmt.Println(err)
 				continue
