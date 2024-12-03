@@ -15,7 +15,7 @@ func routing() error {
 	serverAddr := parseFlag()
 	serverAddrStr := serverAddr.String()
 
-	err := http.ListenAndServe("http://"+serverAddrStr, router)
+	err := http.ListenAndServe(serverAddrStr, router)
 	if err != nil {
 		return err
 	}
