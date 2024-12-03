@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"regexp"
@@ -166,4 +167,24 @@ func GetMetricHandle(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusOK)
 
+}
+
+func ListMetricHandle(res http.ResponseWriter, req *http.Request) {
+	res.Header().Set("Content-type", "text/plain")
+
+	storage := GetMemStorage()
+	metricsInfo := map[string]map[string]string{
+		"Gauges":   storage.GetGauges(),
+		"Counters": storage.GetCounters(),
+	}
+	metricInfoStr, err := json.Marshal(metricsInfo)
+	if err != nil {
+		http.Error(res, "Internal error", http.StatusInternalServerError)
+	}
+
+	res.WriteHeader(http.StatusOK)
+	_, err = res.Write([]byte(metricInfoStr))
+	if err != nil {
+		http.Error(res, "Internal error", http.StatusInternalServerError)
+	}
 }

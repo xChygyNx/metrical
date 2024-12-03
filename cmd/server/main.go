@@ -10,6 +10,7 @@ func routing() error {
 	router := chi.NewRouter()
 	router.Post("/update/{mType}/{metric}/{value}", SaveMetricHandle)
 	router.Get("/value/{mType}/{metric}", GetMetricHandle)
+	router.Get("/", ListMetricHandle)
 
 	err := http.ListenAndServe(":8080", router)
 	if err != nil {
