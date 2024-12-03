@@ -66,6 +66,7 @@ func run() error {
 			}
 			fmt.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
+
 			err = SendGauge(client, sendInfo, config.hostAddr)
 			if err != nil {
 				fmt.Printf("error: %v\n", err)
