@@ -65,7 +65,7 @@ func TestStatusMetricHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
 			w := httptest.NewRecorder()
-			MetricHandle(w, request)
+			SaveMetricHandle(w, request)
 
 			result := w.Result()
 
