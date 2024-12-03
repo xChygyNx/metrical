@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/xChygyNx/metrical/cmd/agent/senders"
 	"math/rand"
 	"net/http"
 	"runtime"
@@ -66,13 +65,13 @@ func main() {
 			}
 			fmt.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
-			err = senders.SendGauge(client, sendInfo)
+			err = SendGauge(client, sendInfo)
 			if err != nil {
 				fmt.Printf("error: %v\n", err)
 				continue
 			}
 
-			err = senders.SendCounter(client, pollCount)
+			err = SendCounter(client, pollCount)
 			if err != nil {
 				fmt.Println(err)
 				continue

@@ -1,4 +1,4 @@
-package senders
+package main
 
 import (
 	"bytes"
@@ -16,8 +16,12 @@ func SendGauge(client *http.Client, sendInfo []uint8) error {
 	if err != nil {
 		return err
 	}
+
+	serverAddr := parseFlag()
+	serverAddrStr := serverAddr.HostPort.String()
+
 	for attr, value := range mapInfo {
-		urlString := "http://localhost:8080/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64)
+		urlString := "http://" + serverAddrStr + "/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64)
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
 			return err
@@ -42,7 +46,10 @@ func SendGauge(client *http.Client, sendInfo []uint8) error {
 }
 
 func SendCounter(client *http.Client, pollCount int) error {
-	counterPath := "http://localhost:8080/update/counter/PollCount/" + strconv.Itoa(pollCount)
+	serverAddr := parseFlag()
+	serverAddrStr := serverAddr.HostPort.String()
+
+	counterPath := "http://" + serverAddrStr + "/update/counter/PollCount/" + strconv.Itoa(pollCount)
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer([]byte(strconv.Itoa(pollCount))))
 	if err != nil {
 		panic(err)
