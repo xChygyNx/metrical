@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -35,7 +36,10 @@ func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) error {
 		fmt.Println("response Body:", string(body))
 		err = resp.Body.Close()
 		if err != nil {
-			io.Copy(os.Stdout, bytes.NewReader([]byte(err.Error())))
+			_, err = io.Copy(os.Stdout, bytes.NewReader([]byte(err.Error())))
+			if err != nil {
+				return errors.New("can't output error in Stdout")
+			}
 		}
 	}
 	return nil
