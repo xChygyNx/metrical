@@ -8,10 +8,11 @@ import (
 )
 
 func routing() error {
+	storage := server.GetMemStorage()
 	router := chi.NewRouter()
-	router.Post("/update/{mType}/{metric}/{value}", server.SaveMetricHandle)
-	router.Get("/value/{mType}/{metric}", server.GetMetricHandle)
-	router.Get("/", server.ListMetricHandle)
+	router.Post("/update/{mType}/{metric}/{value}", server.SaveMetricHandle(storage))
+	router.Get("/value/{mType}/{metric}", server.GetMetricHandle(storage))
+	router.Get("/", server.ListMetricHandle(storage))
 
 	config, err := server.GetConfig()
 	if err != nil {

@@ -13,14 +13,10 @@ type memStorage struct {
 	Counters map[string]counter `json:"counters"`
 }
 
-var instance *memStorage
-
 func GetMemStorage() *memStorage {
-	if instance == nil {
-		instance = &memStorage{}
-		instance.Gauges = map[string]gauge{}
-		instance.Counters = map[string]counter{}
-	}
+	instance := new(memStorage)
+	instance.Gauges = map[string]gauge{}
+	instance.Counters = map[string]counter{}
 	return instance
 }
 
