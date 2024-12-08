@@ -7,12 +7,12 @@ import (
 )
 
 type config struct {
-	pollInterval   int
-	reportInterval int
-	hostAddr       HostPort
+	PollInterval   int
+	ReportInterval int
+	HostAddr       HostPort
 }
 
-func getConfig() (*config, error) {
+func GetConfig() (*config, error) {
 	config := new(config)
 	agentConfig := parseFlag()
 	pollInterval, ok := os.LookupEnv("POLL_INTERVAL")
@@ -21,9 +21,9 @@ func getConfig() (*config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("incorrect value of environment variable POLL_INTERVAL")
 		}
-		config.pollInterval = res
+		config.PollInterval = res
 	} else {
-		config.pollInterval = agentConfig.PollInterval
+		config.PollInterval = agentConfig.PollInterval
 	}
 
 	reportInterval, ok := os.LookupEnv("POLL_INTERVAL")
@@ -32,19 +32,19 @@ func getConfig() (*config, error) {
 		if err != nil {
 			return nil, fmt.Errorf("incorrect value of environment variable REPORT_INTERVAL")
 		}
-		config.reportInterval = res
+		config.ReportInterval = res
 	} else {
-		config.reportInterval = agentConfig.ReportInterval
+		config.ReportInterval = agentConfig.ReportInterval
 	}
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")
 	if ok {
-		err := config.hostAddr.Set(hostAddr)
+		err := config.HostAddr.Set(hostAddr)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		config.hostAddr = agentConfig.HostPort
+		config.HostAddr = agentConfig.HostPort
 	}
 
 	return config, nil

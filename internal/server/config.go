@@ -5,21 +5,21 @@ import (
 )
 
 type config struct {
-	hostAddr HostPort
+	HostAddr HostPort
 }
 
-func getConfig() (*config, error) {
+func GetConfig() (*config, error) {
 	config := new(config)
 	serverConfig := parseFlag()
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")
 	if ok {
-		err := config.hostAddr.Set(hostAddr)
+		err := config.HostAddr.Set(hostAddr)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		err := config.hostAddr.Set(serverConfig.String())
+		err := config.HostAddr.Set(serverConfig.String())
 		if err != nil {
 			return nil, err
 		}

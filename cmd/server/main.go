@@ -4,21 +4,21 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"internal/server"
+	"github.com/xChygyNx/metrical/internal/server"
 )
 
 func routing() error {
 	router := chi.NewRouter()
-	router.Post("/update/{mType}/{metric}/{value}", SaveMetricHandle)
-	router.Get("/value/{mType}/{metric}", GetMetricHandle)
-	router.Get("/", ListMetricHandle)
+	router.Post("/update/{mType}/{metric}/{value}", server.SaveMetricHandle)
+	router.Get("/value/{mType}/{metric}", server.GetMetricHandle)
+	router.Get("/", server.ListMetricHandle)
 
-	config, err := getConfig()
+	config, err := server.GetConfig()
 	if err != nil {
 		return err
 	}
 
-	err = http.ListenAndServe(config.hostAddr.String(), router)
+	err = http.ListenAndServe(config.HostAddr.String(), router)
 	if err != nil {
 		return err
 	}

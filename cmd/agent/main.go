@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"time"
 
-	"internal/agent"
+	"github.com/xChygyNx/metrical/internal/agent"
 )
 
 func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
@@ -51,15 +51,15 @@ func run() error {
 	var memStats runtime.MemStats
 
 	timeReport := time.Now()
-	config, err := getConfig()
+	config, err := agent.GetConfig()
 	if err != nil {
 		return err
 	}
 	for {
-		time.Sleep(time.Second * time.Duration(config.pollInterval))
+		time.Sleep(time.Second * time.Duration(config.PollInterval))
 		runtime.ReadMemStats(&memStats)
 		pollCount += 1
-		if time.Now().After(timeReport.Add(time.Duration(config.reportInterval) * time.Second)) {
+		if time.Now().After(timeReport.Add(time.Duration(config.ReportInterval) * time.Second)) {
 
 			sendInfo, err := json.Marshal(prepareStatsForSend(memStats))
 			if err != nil {
@@ -69,13 +69,13 @@ func run() error {
 			fmt.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
 
-			err = SendGauge(client, sendInfo, config.hostAddr)
+			err = agent.SendGauge(client, sendInfo, config.HostAddr)
 			if err != nil {
 				fmt.Printf("error: %v\n", err)
 				continue
 			}
 
-			err = SendCounter(client, pollCount, config.hostAddr)
+			err = agent.SendCounter(client, pollCount, config.HostAddr)
 			if err != nil {
 				fmt.Println(err)
 				continue
