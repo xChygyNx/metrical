@@ -20,8 +20,8 @@ func (hp *HostPort) String() string {
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
 	if len(hostPort) != 2 {
-		error_msg := "must be value like <Host>:<Port>, got " + value
-		return errors.New(error_msg)
+		errorMsg := "must be value like <Host>:<Port>, got " + value
+		return errors.New(errorMsg)
 	}
 	port, err := strconv.Atoi(hostPort[1])
 	if err != nil {

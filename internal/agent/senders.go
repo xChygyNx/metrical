@@ -20,12 +20,12 @@ func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) (err er
 		urlString := "http://" + hostAddr.String() + "/update/gauge/" + attr + "/" + strconv.FormatFloat(value, 'f', -1, 64)
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer([]byte(sendInfo)))
 		if err != nil {
-			return
+			return err
 		}
 		req.Header.Set("Content-Type", "text/plain")
 		resp, err := client.Do(req)
 		if err != nil {
-			return
+			return err
 		}
 		defer func() {
 			err = resp.Body.Close()
@@ -35,14 +35,14 @@ func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) (err er
 		log.Println("response Headers:", resp.Header)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return
+			return err
 		}
 		log.Println("response Body:", string(body))
 		err = resp.Body.Close()
 		if err != nil {
 			_, err = io.Copy(os.Stdout, bytes.NewReader([]byte(err.Error())))
 			if err != nil {
-				return
+				return err
 			}
 		}
 	}
