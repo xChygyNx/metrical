@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -30,6 +31,6 @@ func main() {
 	err := routing()
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"log"
 	"os"
 )
 
@@ -21,6 +22,7 @@ func GetConfig() (*config, error) {
 	} else {
 		err := config.HostAddr.Set(serverConfig.String())
 		if err != nil {
+			log.Printf("Addres must be like <host>:<port>, got %s\n", serverConfig.String())
 			return nil, err
 		}
 	}

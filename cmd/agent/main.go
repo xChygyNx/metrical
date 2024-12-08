@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -50,38 +49,38 @@ func run() error {
 	var pollCount int
 	var memStats runtime.MemStats
 
-	timeReport := time.Now()
 	config, err := agent.GetConfig()
 	if err != nil {
 		return err
 	}
+	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
 	for {
-		time.Sleep(time.Second * time.Duration(config.PollInterval))
-		runtime.ReadMemStats(&memStats)
-		pollCount += 1
-		if time.Now().After(timeReport.Add(time.Duration(config.ReportInterval) * time.Second)) {
-
+		select {
+		case <-pollTicker.C:
+			runtime.ReadMemStats(&memStats)
+			pollCount += 1
+		case <-reportTicker.C:
 			sendInfo, err := json.Marshal(prepareStatsForSend(memStats))
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
-			fmt.Printf("Type sendInfo: %T\n", sendInfo)
+			log.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
 
 			err = agent.SendGauge(client, sendInfo, config.HostAddr)
 			if err != nil {
-				fmt.Printf("error: %v\n", err)
+				log.Printf("error: %v\n", err)
 				continue
 			}
 
 			err = agent.SendCounter(client, pollCount, config.HostAddr)
 			if err != nil {
-				fmt.Println(err)
+				log.Println(err)
 				continue
 			}
 			pollCount = 0
-			timeReport = time.Now()
 		}
 	}
 }

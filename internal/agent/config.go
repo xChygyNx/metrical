@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -19,7 +20,9 @@ func GetConfig() (*config, error) {
 	if ok {
 		res, err := strconv.Atoi(pollInterval)
 		if err != nil {
-			return nil, fmt.Errorf("incorrect value of environment variable POLL_INTERVAL")
+			error_msg := fmt.Sprintf("Incorrect value of environment variable POLL_INTERVAL, "+
+				"must be integer, got %v\n", pollInterval)
+			return nil, errors.New(error_msg)
 		}
 		config.PollInterval = res
 	} else {
@@ -30,7 +33,9 @@ func GetConfig() (*config, error) {
 	if ok {
 		res, err := strconv.Atoi(reportInterval)
 		if err != nil {
-			return nil, fmt.Errorf("incorrect value of environment variable REPORT_INTERVAL")
+			error_msg := fmt.Sprintf("Incorrect value of environment variable REPORT_INTERVAL, "+
+				"must be integer, got %v\n", reportInterval)
+			return nil, errors.New(error_msg)
 		}
 		config.ReportInterval = res
 	} else {

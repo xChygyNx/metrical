@@ -61,12 +61,13 @@ func TestStatusMetricHandler(t *testing.T) {
 			},
 		},
 	}
+	storage := GetMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
 			w := httptest.NewRecorder()
-			SaveMetricHandle(w, request)
-
+			handler := SaveMetricHandle(storage)
+			handler(w, request)
 			result := w.Result()
 
 			require.Equal(t, test.want.code, result.StatusCode)
