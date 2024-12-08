@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"runtime"
 	"time"
+
+	"internal/agent"
 )
 
 func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {

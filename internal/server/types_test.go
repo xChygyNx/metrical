@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"testing"
@@ -8,34 +8,34 @@ import (
 
 func TestSetGauge(t *testing.T) {
 	tests := []struct {
-		name 	string
-		metcic  string
-		set		float64
-		want 	gauge
+		name   string
+		metcic string
+		set    float64
+		want   gauge
 	}{
 		{
-			name: "Set Gauge metric",
-			metcic:  "some_metric",
-			set: 10.789,
-			want: 10.789,
+			name:   "Set Gauge metric",
+			metcic: "some_metric",
+			set:    10.789,
+			want:   10.789,
 		},
 		{
-			name: "Set Gauge metric again",
-			metcic:  "some_metric",
-			set: 32.6017,
-			want: 32.6017,
+			name:   "Set Gauge metric again",
+			metcic: "some_metric",
+			set:    32.6017,
+			want:   32.6017,
 		},
 		{
-			name: "Set other Gauge metric",
-			metcic:  "other_metric",
-			set: 73.08,
-			want: 73.08,
+			name:   "Set other Gauge metric",
+			metcic: "other_metric",
+			set:    73.08,
+			want:   73.08,
 		},
 		{
-			name: "Set other Gauge metric again",
-			metcic:  "other_metric",
-			set: 23,
-			want: 23,
+			name:   "Set other Gauge metric again",
+			metcic: "other_metric",
+			set:    23,
+			want:   23,
 		},
 	}
 	storage := GetMemStorage()
@@ -54,22 +54,22 @@ func TestGetGauge(t *testing.T) {
 	val := 10.789
 	storage.Gauges[existMetric] = gauge(val)
 	tests := []struct {
-		name 	string
-		metcic  string
-		want 	float64
-		ok		bool
+		name   string
+		metcic string
+		want   float64
+		ok     bool
 	}{
 		{
-			name: "Get exists Gauge metric",
-			metcic:  existMetric,
-			want: val,
-			ok: true,
+			name:   "Get exists Gauge metric",
+			metcic: existMetric,
+			want:   val,
+			ok:     true,
 		},
 		{
-			name: "Get not exists Gauge metric",
-			metcic:  notExistMetric,
-			want: 0,
-			ok: false,
+			name:   "Get not exists Gauge metric",
+			metcic: notExistMetric,
+			want:   0,
+			ok:     false,
 		},
 	}
 	for _, test := range tests {
@@ -83,34 +83,34 @@ func TestGetGauge(t *testing.T) {
 
 func TestSetCounter(t *testing.T) {
 	tests := []struct {
-		name 	string
-		metcic  string
-		set		int64
-		want 	counter
+		name   string
+		metcic string
+		set    int64
+		want   counter
 	}{
 		{
-			name: "Set Counter metric",
-			metcic:  "some_metric",
-			set: 15,
-			want: 15,
+			name:   "Set Counter metric",
+			metcic: "some_metric",
+			set:    15,
+			want:   15,
 		},
 		{
-			name: "Set Counter metric again",
-			metcic:  "some_metric",
-			set: 17,
-			want: 32,
+			name:   "Set Counter metric again",
+			metcic: "some_metric",
+			set:    17,
+			want:   32,
 		},
 		{
-			name: "Set other Counter metric",
-			metcic:  "other_metric",
-			set: 35,
-			want: 35,
+			name:   "Set other Counter metric",
+			metcic: "other_metric",
+			set:    35,
+			want:   35,
 		},
 		{
-			name: "Set other Counter metric again",
-			metcic:  "other_metric",
-			set: 23,
-			want: 58,
+			name:   "Set other Counter metric again",
+			metcic: "other_metric",
+			set:    23,
+			want:   58,
 		},
 	}
 	storage := GetMemStorage()
@@ -129,22 +129,22 @@ func TestGetCounter(t *testing.T) {
 	var val int64 = 10
 	storage.Counters[existMetric] = counter(val)
 	tests := []struct {
-		name 	string
-		metcic  string
-		want 	int64
-		ok		bool
+		name   string
+		metcic string
+		want   int64
+		ok     bool
 	}{
 		{
-			name: "Get exists Gauge metric",
-			metcic:  existMetric,
-			want: val,
-			ok: true,
+			name:   "Get exists Gauge metric",
+			metcic: existMetric,
+			want:   val,
+			ok:     true,
 		},
 		{
-			name: "Get not exists Gauge metric",
-			metcic:  notExistMetric,
-			want: 0,
-			ok: false,
+			name:   "Get not exists Gauge metric",
+			metcic: notExistMetric,
+			want:   0,
+			ok:     false,
 		},
 	}
 	for _, test := range tests {
@@ -155,4 +155,3 @@ func TestGetCounter(t *testing.T) {
 		})
 	}
 }
-

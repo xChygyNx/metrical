@@ -1,9 +1,8 @@
 module github.com/xChygyNx/metrical
 
-go 1.22.9
+go 1.22.0
 
 require (
-	github.com/caarlos0/env/v6 v6.10.1
 	github.com/go-chi/chi/v5 v5.1.0
 	github.com/stretchr/testify v1.10.0
 )
