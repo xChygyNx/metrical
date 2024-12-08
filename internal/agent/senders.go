@@ -13,7 +13,7 @@ import (
 
 func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) (err error) {
 	var mapInfo map[string]float64
-	err := json.Unmarshal([]byte(sendInfo), &mapInfo)
+	err = json.Unmarshal([]byte(sendInfo), &mapInfo)
 	if err != nil {
 		return err
 	}
