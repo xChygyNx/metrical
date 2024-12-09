@@ -1,7 +1,8 @@
 package server
 
 import (
-	"log"
+	"errors"
+	"fmt"
 	"os"
 )
 
@@ -22,8 +23,8 @@ func GetConfig() (*config, error) {
 	} else {
 		err := config.HostAddr.Set(serverConfig.String())
 		if err != nil {
-			log.Printf("Addres must be like <host>:<port>, got %s\n", serverConfig.String())
-			return nil, err
+			errorMsg := fmt.Sprintf("Addres must be like <host>:<port>, got %s\n", serverConfig.String())
+			return nil, errors.New(errorMsg)
 		}
 	}
 

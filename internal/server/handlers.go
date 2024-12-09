@@ -47,36 +47,33 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 
 		match, err := regexp.MatchString(`^\/update\/(gauge|counter)`, path)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't parse metric type from URL: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
 		if !match {
-			log.Println("Unknown metric type, must be gauge or counter")
 			http.Error(res, "Unknown metric type, must be gauge or counter", http.StatusBadRequest)
 			return
 		}
 
 		match, err = regexp.MatchString(`^\/update\/(gauge|counter)/[a-zA-Z0-9]+`, path)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't parse metric name from URL: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
 		if !match {
-			log.Println("Incorrect metric name, must contains only from alphabetical and numerical symbols")
 			http.Error(res, "Incorrect metric name, must contains only from alphabetical and numerical symbols", http.StatusNotFound)
 			return
 		}
 
 		match, err = regexp.MatchString(`^\/update\/(gauge|counter)/[a-zA-Z0-9]+\/(\d+\.\d+|\d+)$`, path)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't parse metric value from URL: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
 		if !match {
-			log.Println("Incorrect metric value, must be numerical")
 			http.Error(res, "Incorrect metric value, must be numerical", http.StatusBadRequest)
 			return
 		}
@@ -87,14 +84,13 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 		var mType, mName, valueStr string
 		_, err = fmt.Sscanf(path, "%s %s %s", &mType, &mName, &valueStr)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't scan values of metric type, metric name and metric value: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
 
 		err = saveMetricValue(mType, mName, valueStr, storage)
 		if err != nil {
-			log.Println("Value of metric must be numeric, got " + valueStr)
 			http.Error(res, "Value of metric must be numeric, got "+valueStr, http.StatusBadRequest)
 			return
 		}
@@ -102,7 +98,7 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte("OK"))
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
 			http.Error(res, "Internal error", http.StatusInternalServerError)
 		}
 	}
@@ -128,24 +124,22 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 
 		match, err := regexp.MatchString(`^\/value\/(gauge|counter)`, path)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't parse metric type from URL: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
 		if !match {
-			log.Println("Unknown metric type, must be gauge or counter")
 			http.Error(res, "Unknown metric type, must be gauge or counter", http.StatusBadRequest)
 			return
 		}
 
 		match, err = regexp.MatchString(`^\/value\/(gauge|counter)/[a-zA-Z0-9]+`, path)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't parse metric name from URL: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
 		if !match {
-			log.Println("Incorrect metric name, must contains only from alphabetical and numerical symbols")
 			http.Error(res, "Incorrect metric name, must contains only from alphabetical and numerical symbols", http.StatusNotFound)
 			return
 		}
@@ -156,7 +150,7 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 		var mType, mName string
 		_, err = fmt.Sscanf(path, "%s %s", &mType, &mName)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Can't scan values of metric type and metric name: %v\n", err)
 			http.Error(res, "Internal Server error", http.StatusInternalServerError)
 			return
 		}
@@ -168,19 +162,17 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 			return
 		}
 
-		switch valueType := valueInterface.(type) {
+		switch valueInterface.(type) {
 		case int64:
-			log.Printf("Got value with type %T", valueType)
 			_, err = res.Write([]byte(strconv.FormatInt(valueInterface.(int64), 10)))
 			if err != nil {
-				log.Println("Internal Server error")
+				log.Printf("Error in format integer from receive data: %v\n", err)
 				http.Error(res, "Internal error", http.StatusInternalServerError)
 			}
 		case float64:
-			log.Printf("Got value with type %T", valueType)
 			_, err = res.Write([]byte(strconv.FormatFloat(valueInterface.(float64), 'f', -1, 64)))
 			if err != nil {
-				log.Println("Internal Server error")
+				log.Printf("Error in format float from receive data: %v\n", err)
 				http.Error(res, "Internal error", http.StatusInternalServerError)
 			}
 		}
@@ -199,14 +191,14 @@ func ListMetricHandle(storage *memStorage) http.HandlerFunc {
 		}
 		metricInfoStr, err := json.Marshal(metricsInfo)
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Error in serialize of metrics storage: %v\n", err)
 			http.Error(res, "Internal error", http.StatusInternalServerError)
 		}
 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte(metricInfoStr))
 		if err != nil {
-			log.Println("Internal Server error")
+			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
 			http.Error(res, "Internal error", http.StatusInternalServerError)
 		}
 	}
