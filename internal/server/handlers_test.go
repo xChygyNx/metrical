@@ -49,10 +49,10 @@ func TestStatusMetricHandler(t *testing.T) {
 		},
 		{
 			name: "Incorrect gauge metric name",
-			url:  "/update/gauge/Incorrect123Name/100.123",
+			url:  "/update/gauge/Incorrect12<>3Name/100.123",
 			pathValues: map[string]string{
 				"mType":  "gauge",
-				"metric": "Incorrect123Name",
+				"metric": "Incorrect12<>3Name",
 				"value":  "100.123",
 			},
 			want: want{
@@ -88,10 +88,10 @@ func TestStatusMetricHandler(t *testing.T) {
 		},
 		{
 			name: "Incorrect counter metric name",
-			url:  "/update/counter/Incorrect123Name/12",
+			url:  "/update/counter/Incorrect12<>3Name/12",
 			pathValues: map[string]string{
 				"mType":  "counter",
-				"metric": "Incorrect123Name",
+				"metric": "Incorrect12<>3Name",
 				"value":  "12",
 			},
 			want: want{

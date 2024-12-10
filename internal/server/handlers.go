@@ -49,11 +49,11 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
-		isAlphabetic := regexp.MustCompile(`^[A-Za-z]+$`).MatchString
+		isValid := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
 		metricName := req.PathValue("metric")
-		if !isAlphabetic(metricName) {
-			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical symbols,"+
-				"got %s\n", metricName)
+		if !isValid(metricName) {
+			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical "+
+				"and numerical symbols, got %s\n", metricName)
 			http.Error(res, errorMsg, http.StatusNotFound)
 			return
 		}
@@ -99,11 +99,11 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 			return
 		}
 
-		isAlphabetic := regexp.MustCompile(`^[A-Za-z]+$`).MatchString
+		isValid := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
 		metricName := req.PathValue("metric")
-		if !isAlphabetic(metricName) {
-			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical symbols,"+
-				"got %s\n", metricName)
+		if !isValid(metricName) {
+			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical "+
+				"and numerical symbols, got %s\n", metricName)
 			http.Error(res, errorMsg, http.StatusNotFound)
 			return
 		}
