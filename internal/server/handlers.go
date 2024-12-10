@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"slices"
+	"regexp"
 	"strconv"
 )
 
@@ -49,25 +49,11 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
-		metricNames := map[string][]string{
-			"gauge": []string{"Alloc", "BuckHashSys", "Frees", "GCCPUFraction", "GCSys",
-				"HeapAlloc", "HeapIdle", "HeapInuse", "HeapObjects", "HeapReleased",
-				"HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys",
-				"MSpanInuse", "Mallocs", "NextGC", "NumForcedGC", "NumGC",
-				"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
-				"TotalAlloc", "RandomValue"},
-			"counter": []string{"PollCount"},
-		}
-		metricNameSlice, ok := metricNames[metricType]
-		if !ok {
-			errorMsg := fmt.Sprintf("Not found metrics for type %v\n", metricType)
-			http.Error(res, errorMsg, http.StatusNotFound)
-			return
-		}
+		isAlphabetic := regexp.MustCompile(`^[A-Za-z]+$`).MatchString
 		metricName := req.PathValue("metric")
-		if !slices.Contains(metricNameSlice, metricName) {
-			errorMsg := fmt.Sprintf("Incorrect %s metric name, must be one from them: %v\n",
-				metricName, metricNameSlice)
+		if !isAlphabetic(metricName) {
+			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical symbols,"+
+				"got %s\n", metricName)
 			http.Error(res, errorMsg, http.StatusNotFound)
 			return
 		}
@@ -113,11 +99,11 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 			return
 		}
 
-		counters := []string{"PollCount"}
+		isAlphabetic := regexp.MustCompile(`^[A-Za-z]+$`).MatchString
 		metricName := req.PathValue("metric")
-		if !slices.Contains(counters, metricName) {
-			errorMsg := fmt.Sprintf("Incorrect %s metric name, must be one from them: %v\n",
-				metricType, counters)
+		if !isAlphabetic(metricName) {
+			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical symbols,"+
+				"got %s\n", metricName)
 			http.Error(res, errorMsg, http.StatusNotFound)
 			return
 		}
