@@ -16,13 +16,19 @@ func TestStatusMetricHandler(t *testing.T) {
 		contentType string
 	}
 	tests := []struct {
-		name string
-		url  string
-		want want
+		name       string
+		url        string
+		pathValues map[string]string
+		want       want
 	}{
 		{
 			name: "Incorrect gauge path",
-			url:  "/update/other/value/12.3456",
+			url:  "/update/other/metric/12.3456",
+			pathValues: map[string]string{
+				"mType":  "other",
+				"metric": "metric",
+				"value":  "12.3456",
+			},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=utf-8",
@@ -30,31 +36,77 @@ func TestStatusMetricHandler(t *testing.T) {
 		},
 		{
 			name: "Correct gauge path",
-			url:  "/update/gauge/someMetric/100.123",
+			url:  "/update/gauge/Mallocs/100.123",
+			pathValues: map[string]string{
+				"mType":  "gauge",
+				"metric": "Mallocs",
+				"value":  "100.123",
+			},
 			want: want{
 				code:        http.StatusOK,
 				contentType: "text/plain",
 			},
 		},
 		{
-			name: "Correct counter path",
-			url:  "/update/counter/someMetric/100",
+			name: "Incorrect gauge metric name",
+			url:  "/update/gauge/notExistsMetric/100.123",
+			pathValues: map[string]string{
+				"mType":  "gauge",
+				"metric": "notExistsMetric",
+				"value":  "100.123",
+			},
 			want: want{
-				code:        http.StatusOK,
-				contentType: "text/plain",
+				code:        http.StatusNotFound,
+				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
-			name: "Incorrect gauge value",
-			url:  "/update/gauge/someMetric/none",
+			name: "Inorrect gauge metric value",
+			url:  "/update/gauge/Mallocs/none",
+			pathValues: map[string]string{
+				"mType":  "gauge",
+				"metric": "Mallocs",
+				"value":  "none",
+			},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
+			name: "Correct counter path",
+			url:  "/update/counter/PollCount/100",
+			pathValues: map[string]string{
+				"mType":  "counter",
+				"metric": "PollCount",
+				"value":  "100",
+			},
+			want: want{
+				code:        http.StatusOK,
+				contentType: "text/plain",
+			},
+		},
+		{
+			name: "Incorrect counter metric name",
+			url:  "/update/counter/someMetric/12",
+			pathValues: map[string]string{
+				"mType":  "counter",
+				"metric": "someMetric",
+				"value":  "12",
+			},
+			want: want{
+				code:        http.StatusNotFound,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
 			name: "Incorrect counter value",
-			url:  "/update/counter/someMetric/none",
+			url:  "/update/counter/PollCount/none",
+			pathValues: map[string]string{
+				"mType":  "counter",
+				"metric": "PollCount",
+				"value":  "none",
+			},
 			want: want{
 				code:        http.StatusBadRequest,
 				contentType: "text/plain; charset=utf-8",
@@ -65,6 +117,9 @@ func TestStatusMetricHandler(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, nil)
+			for k, v := range test.pathValues {
+				request.SetPathValue(k, v)
+			}
 			w := httptest.NewRecorder()
 			handler := SaveMetricHandle(storage)
 			handler(w, request)

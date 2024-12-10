@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
+	"slices"
 	"strconv"
-	"strings"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -43,55 +42,42 @@ func saveMetricValue(mType, mName, value string, storage *memStorage) (err error
 func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-type", "text/plain")
-		path := req.URL.Path
 
-		match, err := regexp.MatchString(`^\/update\/(gauge|counter)`, path)
+		metricType := req.PathValue("mType")
+		if metricType != "gauge" && metricType != "counter" {
+			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
+			http.Error(res, errorMsg, http.StatusBadRequest)
+			return
+		}
+		metricNames := map[string][]string{
+			"gauge": []string{"Alloc", "BuckHashSys", "Frees", "GCCPUFraction", "GCSys",
+				"HeapAlloc", "HeapIdle", "HeapInuse", "HeapObjects", "HeapReleased",
+				"HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys",
+				"MSpanInuse", "Mallocs", "NextGC", "NumForcedGC", "NumGC",
+				"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
+				"TotalAlloc", "RandomValue"},
+			"counter": []string{"PollCount"},
+		}
+		metricNameSlice, ok := metricNames[metricType]
+		if !ok {
+			errorMsg := fmt.Sprintf("Not found metrics for type %v\n", metricType)
+			http.Error(res, errorMsg, http.StatusNotFound)
+			return
+		}
+		metricName := req.PathValue("metric")
+		if !slices.Contains(metricNameSlice, metricName) {
+			errorMsg := fmt.Sprintf("Incorrect %s metric name, must be one from them: %v\n",
+				metricName, metricNameSlice)
+			http.Error(res, errorMsg, http.StatusNotFound)
+			return
+		}
+
+		metricValue := req.PathValue("value")
+
+		err := saveMetricValue(metricType, metricName, metricValue, storage)
 		if err != nil {
-			log.Printf("Can't parse metric type from URL: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
-			return
-		}
-		if !match {
-			http.Error(res, "Unknown metric type, must be gauge or counter", http.StatusBadRequest)
-			return
-		}
-
-		match, err = regexp.MatchString(`^\/update\/(gauge|counter)/[a-zA-Z0-9]+`, path)
-		if err != nil {
-			log.Printf("Can't parse metric name from URL: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
-			return
-		}
-		if !match {
-			http.Error(res, "Incorrect metric name, must contains only from alphabetical and numerical symbols", http.StatusNotFound)
-			return
-		}
-
-		match, err = regexp.MatchString(`^\/update\/(gauge|counter)/[a-zA-Z0-9]+\/(\d+\.\d+|\d+)$`, path)
-		if err != nil {
-			log.Printf("Can't parse metric value from URL: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
-			return
-		}
-		if !match {
-			http.Error(res, "Incorrect metric value, must be numerical", http.StatusBadRequest)
-			return
-		}
-
-		path = strings.Replace(path, "/update/", "", 1)
-		path = strings.Replace(path, "/", " ", -1)
-
-		var mType, mName, valueStr string
-		_, err = fmt.Sscanf(path, "%s %s %s", &mType, &mName, &valueStr)
-		if err != nil {
-			log.Printf("Can't scan values of metric type, metric name and metric value: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
-			return
-		}
-
-		err = saveMetricValue(mType, mName, valueStr, storage)
-		if err != nil {
-			http.Error(res, "Value of metric must be numeric, got "+valueStr, http.StatusBadRequest)
+			errorMsg := fmt.Sprintf("Value of metric must be numeric, got %s, err: %v\n", metricValue, err)
+			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
 
@@ -120,57 +106,37 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 
 		res.Header().Set("Content-type", "text/plain")
-		path := req.URL.Path
-
-		match, err := regexp.MatchString(`^\/value\/(gauge|counter)`, path)
-		if err != nil {
-			log.Printf("Can't parse metric type from URL: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
-			return
-		}
-		if !match {
-			http.Error(res, "Unknown metric type, must be gauge or counter", http.StatusBadRequest)
+		metricType := req.PathValue("mType")
+		if metricType != "gauge" && metricType != "counter" {
+			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
+			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
 
-		match, err = regexp.MatchString(`^\/value\/(gauge|counter)/[a-zA-Z0-9]+`, path)
-		if err != nil {
-			log.Printf("Can't parse metric name from URL: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
-			return
-		}
-		if !match {
-			http.Error(res, "Incorrect metric name, must contains only from alphabetical and numerical symbols", http.StatusNotFound)
-			return
-		}
-
-		path = strings.Replace(path, "/value/", "", 1)
-		path = strings.Replace(path, "/", " ", -1)
-
-		var mType, mName string
-		_, err = fmt.Sscanf(path, "%s %s", &mType, &mName)
-		if err != nil {
-			log.Printf("Can't scan values of metric type and metric name: %v\n", err)
-			http.Error(res, "Internal Server error", http.StatusInternalServerError)
+		counters := []string{"PollCount"}
+		metricName := req.PathValue("metric")
+		if !slices.Contains(counters, metricName) {
+			errorMsg := fmt.Sprintf("Incorrect %s metric name, must be one from them: %v\n",
+				metricType, counters)
+			http.Error(res, errorMsg, http.StatusNotFound)
 			return
 		}
 
-		valueInterface, ok := getMetricValue(mType, mName, storage)
+		valueInterface, ok := getMetricValue(metricType, metricName, storage)
 		if !ok {
-			log.Println("Metric " + mName + " not set")
-			http.Error(res, "Metric "+mName+" not set", http.StatusNotFound)
+			http.Error(res, "Metric "+metricName+" not set", http.StatusNotFound)
 			return
 		}
 
-		switch valueInterface.(type) {
+		switch metricValue := valueInterface.(type) {
 		case int64:
-			_, err = res.Write([]byte(strconv.FormatInt(valueInterface.(int64), 10)))
+			_, err := res.Write([]byte(strconv.FormatInt(metricValue, 10)))
 			if err != nil {
 				log.Printf("Error in format integer from receive data: %v\n", err)
 				http.Error(res, "Internal error", http.StatusInternalServerError)
 			}
 		case float64:
-			_, err = res.Write([]byte(strconv.FormatFloat(valueInterface.(float64), 'f', -1, 64)))
+			_, err := res.Write([]byte(strconv.FormatFloat(metricValue, 'f', -1, 64)))
 			if err != nil {
 				log.Printf("Error in format float from receive data: %v\n", err)
 				http.Error(res, "Internal error", http.StatusInternalServerError)
