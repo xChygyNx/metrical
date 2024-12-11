@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func prepareStatsForSend(stats runtime.MemStats) map[string]float64 {
+func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	result := make(map[string]float64)
 
 	result["Alloc"] = float64(stats.Alloc)
@@ -57,14 +57,13 @@ func Run() error {
 		select {
 		case <-pollTicker.C:
 			runtime.ReadMemStats(&memStats)
-			pollCount += 1
+			pollCount++
 		case <-reportTicker.C:
-			sendInfo, err := json.Marshal(prepareStatsForSend(memStats))
+			sendInfo, err := json.Marshal(prepareStatsForSend(&memStats))
 			if err != nil {
 				log.Println(err)
 				continue
 			}
-			log.Printf("Type sendInfo: %T\n", sendInfo)
 			client := &http.Client{}
 
 			err = SendGauge(client, sendInfo, config.HostAddr)

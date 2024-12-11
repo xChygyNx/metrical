@@ -24,7 +24,7 @@ func (ms *memStorage) SetGauge(mName string, mValue float64) {
 	ms.Gauges[mName] = gauge(mValue)
 }
 
-func (ms *memStorage) SetConunter(mName string, mValue int64) {
+func (ms *memStorage) SetCounter(mName string, mValue int64) {
 	ms.Counters[mName] += counter(mValue)
 }
 
@@ -60,7 +60,7 @@ func (ms *memStorage) SetGauges(data map[string]float64) {
 	}
 }
 
-func (ms *memStorage) SetConunters(data map[string]float64) {
+func (ms *memStorage) SetCounters(data map[string]float64) {
 	for k, v := range data {
 		ms.Counters[k] += counter(v)
 	}

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/xChygyNx/metrical/internal/server"
 	"log"
+
+	"github.com/xChygyNx/metrical/internal/server"
 )
 
 func main() {

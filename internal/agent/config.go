@@ -8,9 +8,9 @@ import (
 )
 
 type config struct {
+	HostAddr       HostPort
 	PollInterval   int
 	ReportInterval int
-	HostAddr       HostPort
 }
 
 func GetConfig() (*config, error) {

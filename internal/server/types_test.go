@@ -9,31 +9,31 @@ import (
 func TestSetGauge(t *testing.T) {
 	tests := []struct {
 		name   string
-		metcic string
+		metric string
 		set    float64
 		want   gauge
 	}{
 		{
 			name:   "Set Gauge metric",
-			metcic: "some_metric",
+			metric: "some_metric",
 			set:    10.789,
 			want:   10.789,
 		},
 		{
 			name:   "Set Gauge metric again",
-			metcic: "some_metric",
+			metric: "some_metric",
 			set:    32.6017,
 			want:   32.6017,
 		},
 		{
 			name:   "Set other Gauge metric",
-			metcic: "other_metric",
+			metric: "other_metric",
 			set:    73.08,
 			want:   73.08,
 		},
 		{
 			name:   "Set other Gauge metric again",
-			metcic: "other_metric",
+			metric: "other_metric",
 			set:    23,
 			want:   23,
 		},
@@ -41,8 +41,8 @@ func TestSetGauge(t *testing.T) {
 	storage := GetMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage.SetGauge(test.metcic, test.set)
-			assert.Equal(t, test.want, storage.Gauges[test.metcic])
+			storage.SetGauge(test.metric, test.set)
+			assert.Equal(t, test.want, storage.Gauges[test.metric])
 		})
 	}
 }
@@ -84,31 +84,31 @@ func TestGetGauge(t *testing.T) {
 func TestSetCounter(t *testing.T) {
 	tests := []struct {
 		name   string
-		metcic string
+		metric string
 		set    int64
 		want   counter
 	}{
 		{
 			name:   "Set Counter metric",
-			metcic: "some_metric",
+			metric: "some_metric",
 			set:    15,
 			want:   15,
 		},
 		{
 			name:   "Set Counter metric again",
-			metcic: "some_metric",
+			metric: "some_metric",
 			set:    17,
 			want:   32,
 		},
 		{
 			name:   "Set other Counter metric",
-			metcic: "other_metric",
+			metric: "other_metric",
 			set:    35,
 			want:   35,
 		},
 		{
 			name:   "Set other Counter metric again",
-			metcic: "other_metric",
+			metric: "other_metric",
 			set:    23,
 			want:   58,
 		},
@@ -116,8 +116,8 @@ func TestSetCounter(t *testing.T) {
 	storage := GetMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			storage.SetConunter(test.metcic, test.set)
-			assert.Equal(t, test.want, storage.Counters[test.metcic])
+			storage.SetCounter(test.metric, test.set)
+			assert.Equal(t, test.want, storage.Counters[test.metric])
 		})
 	}
 }

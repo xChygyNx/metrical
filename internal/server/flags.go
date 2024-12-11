@@ -19,13 +19,14 @@ func (hp *HostPort) String() string {
 
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
-	if len(hostPort) != 2 {
+	numHostPortParts := 2
+	if len(hostPort) != numHostPortParts {
 		errorMsg := "must be value like <Host>:<Port>, got " + value
 		return errors.New(errorMsg)
 	}
 	port, err := strconv.Atoi(hostPort[1])
 	if err != nil {
-		return err
+		return fmt.Errorf("error in Atoi value of port: %w", err)
 	}
 	hp.Host = hostPort[0]
 	hp.Port = port

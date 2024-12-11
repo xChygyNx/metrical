@@ -1,8 +1,10 @@
 package server
 
 import (
-	"github.com/go-chi/chi/v5"
+	"fmt"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 func Routing() error {
@@ -14,12 +16,12 @@ func Routing() error {
 
 	config, err := GetConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("error in GetConfig: %w", err)
 	}
 
 	err = http.ListenAndServe(config.HostAddr.String(), router)
 	if err != nil {
-		return err
+		return fmt.Errorf("error with launch http server: %w", err)
 	}
 	return nil
 }

@@ -9,9 +9,9 @@ import (
 )
 
 type AgentConfig struct {
+	HostPort       HostPort
 	PollInterval   int
 	ReportInterval int
-	HostPort       HostPort
 }
 
 type HostPort struct {
@@ -25,13 +25,14 @@ func (hp *HostPort) String() string {
 
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
-	if len(hostPort) != 2 {
+	numPartsHostPort := 2
+	if len(hostPort) != numPartsHostPort {
 		errorMsg := "must be value like <Host>:<Port>, got " + value
 		return errors.New(errorMsg)
 	}
 	port, err := strconv.Atoi(hostPort[1])
 	if err != nil {
-		return err
+		return fmt.Errorf("error in Atoi port value: %w", err)
 	}
 	hp.Host = hostPort[0]
 	hp.Port = port
@@ -40,8 +41,10 @@ func (hp *HostPort) Set(value string) error {
 
 func parseFlag() *AgentConfig {
 	agentConfig := new(AgentConfig)
-	pollInterval := flag.Int("p", 2, "Interval of collect metrics in seconds")
-	reportInterval := flag.Int("r", 10, "Interval of send metrics on server in seconds")
+	defaultPollInterval := 2
+	defaultReportInterval := 10
+	pollInterval := flag.Int("p", defaultPollInterval, "Interval of collect metrics in seconds")
+	reportInterval := flag.Int("r", defaultReportInterval, "Interval of send metrics on server in seconds")
 
 	hostPort := new(HostPort)
 	flag.Var(hostPort, "a", "Net address host:port")

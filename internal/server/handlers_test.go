@@ -12,8 +12,8 @@ import (
 
 func TestStatusMetricHandler(t *testing.T) {
 	type want struct {
-		code        int
 		contentType string
+		code        int
 	}
 	tests := []struct {
 		name       string
@@ -90,7 +90,7 @@ func TestStatusMetricHandler(t *testing.T) {
 	storage := GetMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, test.url, nil)
+			request := httptest.NewRequest(http.MethodPost, test.url, http.NoBody)
 			for k, v := range test.pathValues {
 				request.SetPathValue(k, v)
 			}
@@ -100,7 +100,10 @@ func TestStatusMetricHandler(t *testing.T) {
 			result := w.Result()
 
 			require.Equal(t, test.want.code, result.StatusCode)
-			defer result.Body.Close()
+			defer func() {
+				err := result.Body.Close()
+				require.NoError(t, err)
+			}()
 			_, err := io.ReadAll(result.Body)
 			require.NoError(t, err)
 

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/xChygyNx/metrical/internal/agent"
 	"log"
+
+	"github.com/xChygyNx/metrical/internal/agent"
 )
 
 func main() {

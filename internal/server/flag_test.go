@@ -8,8 +8,8 @@ import (
 
 func TestParseFlags(t *testing.T) {
 	type want struct {
-		port int
 		host string
+		port int
 	}
 	tests := []struct {
 		name string

@@ -1,10 +1,10 @@
 package agent
 
 import (
-	"fmt"
-	"github.com/stretchr/testify/assert"
 	"runtime"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrepareStatsForSend(t *testing.T) {
@@ -19,11 +19,10 @@ func TestPrepareStatsForSend(t *testing.T) {
 		"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
 		"TotalAlloc", "RandomValue"}
 
-	memStats := prepareStatsForSend(memStat)
+	memStats := prepareStatsForSend(&memStat)
 	for _, stat := range stats {
-		msg = fmt.Sprintf("MemStat not contain stat %s", stat)
+		msg = "MemStat not contain stat " + stat
 		_, ok := memStats[stat]
 		assert.True(t, ok, msg)
-
 	}
 }
