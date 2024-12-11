@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 )
 
@@ -49,15 +48,8 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
-		isValid := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
-		metricName := req.PathValue("metric")
-		if !isValid(metricName) {
-			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical "+
-				"and numerical symbols, got %s\n", metricName)
-			http.Error(res, errorMsg, http.StatusNotFound)
-			return
-		}
 
+		metricName := req.PathValue("metric")
 		metricValue := req.PathValue("value")
 
 		err := saveMetricValue(metricType, metricName, metricValue, storage)
@@ -99,15 +91,7 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 			return
 		}
 
-		isValid := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
 		metricName := req.PathValue("metric")
-		if !isValid(metricName) {
-			errorMsg := fmt.Sprintf("Incorrect metric name, must contains only from alphabetical "+
-				"and numerical symbols, got %s\n", metricName)
-			http.Error(res, errorMsg, http.StatusNotFound)
-			return
-		}
-
 		valueInterface, ok := getMetricValue(metricType, metricName, storage)
 		if !ok {
 			http.Error(res, "Metric "+metricName+" not set", http.StatusNotFound)

@@ -48,19 +48,6 @@ func TestStatusMetricHandler(t *testing.T) {
 			},
 		},
 		{
-			name: "Incorrect gauge metric name",
-			url:  "/update/gauge/Incorrect12<>3Name/100.123",
-			pathValues: map[string]string{
-				"mType":  "gauge",
-				"metric": "Incorrect12<>3Name",
-				"value":  "100.123",
-			},
-			want: want{
-				code:        http.StatusNotFound,
-				contentType: "text/plain; charset=utf-8",
-			},
-		},
-		{
 			name: "Inorrect gauge metric value",
 			url:  "/update/gauge/Mallocs/none",
 			pathValues: map[string]string{
@@ -84,19 +71,6 @@ func TestStatusMetricHandler(t *testing.T) {
 			want: want{
 				code:        http.StatusOK,
 				contentType: "text/plain",
-			},
-		},
-		{
-			name: "Incorrect counter metric name",
-			url:  "/update/counter/Incorrect12<>3Name/12",
-			pathValues: map[string]string{
-				"mType":  "counter",
-				"metric": "Incorrect12<>3Name",
-				"value":  "12",
-			},
-			want: want{
-				code:        http.StatusNotFound,
-				contentType: "text/plain; charset=utf-8",
 			},
 		},
 		{
