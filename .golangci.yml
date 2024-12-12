@@ -479,7 +479,7 @@ linters:
     - bidichk
     - bodyclose
     - containedctx
-#    - dupl
+    - dupl
     - dupword
     - durationcheck
     - errcheck
@@ -557,6 +557,8 @@ issues:
   exclude-rules:
     - path: "_test\\.go"
       text: "fieldalignment: struct with \\d+ pointer bytes could be \\d+"
+    - path: "internal/server/types_test.go"
+      text: "lines are duplicate of"
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0
