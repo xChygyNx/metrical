@@ -1,6 +1,8 @@
 package server
 
 import (
+	"fmt"
+	"net/http"
 	"strconv"
 )
 
@@ -64,4 +66,30 @@ func (ms *memStorage) SetCounters(data map[string]float64) {
 	for k, v := range data {
 		ms.Counters[k] += counter(v)
 	}
+}
+
+type (
+	responseData struct {
+		status int
+		size   int
+	}
+
+	loggingResponseWriter struct {
+		http.ResponseWriter
+		responseData *responseData
+	}
+)
+
+func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
+	size, err := lrw.ResponseWriter.Write(b)
+	if err != nil {
+		err = fmt.Errorf("error in method Write of loggingResponseWrirer: %w", err)
+	}
+	lrw.responseData.size += size
+	return size, err
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(statusCode int) {
+	lrw.ResponseWriter.WriteHeader(statusCode)
+	lrw.responseData.status = statusCode
 }
