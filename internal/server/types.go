@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -82,8 +83,12 @@ type (
 
 func (lrw *loggingResponseWriter) Write(b []byte) (int, error) {
 	size, err := lrw.ResponseWriter.Write(b)
+	if err != nil {
+		errorMsg := fmt.Sprintf("error in method Write of loggingResponseWrirer: %w", err)
+		err = errors.New(errorMsg)
+	}
 	lrw.responseData.size += size
-	return size, fmt.Errorf("error in method Write of loggingResponseWrirer: %w\n", err)
+	return size, err
 }
 
 func (lrw *loggingResponseWriter) WriteHeader(statusCode int) {
