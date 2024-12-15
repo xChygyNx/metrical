@@ -13,9 +13,7 @@ import (
 var sugar zap.SugaredLogger
 
 func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc {
-
 	logFn := func(w http.ResponseWriter, r *http.Request) {
-
 		start := time.Now()
 
 		responseData := &responseData{
