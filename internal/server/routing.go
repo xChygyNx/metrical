@@ -3,11 +3,11 @@ package server
 import (
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"net/http"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"go.uber.org/zap"
 )
 
 var sugar zap.SugaredLogger
