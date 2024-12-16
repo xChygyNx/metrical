@@ -9,22 +9,34 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
-func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) (err error) {
-	var mapInfo map[string]float64
-	err = json.Unmarshal(sendInfo, &mapInfo)
-	if err != nil {
-		return
-	}
+const (
+	contentType = "application/json"
+)
+
+func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		urlString := "http://" + hostAddr.String() + "/update/gauge/" + attr + "/" +
 			strconv.FormatFloat(value, 'f', -1, 64)
-		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(sendInfo))
+
+		sendJSON := types.Metrics{
+			ID:    attr,
+			MType: "gauge",
+			Value: &value,
+		}
+		jsonString, err := json.Marshal(sendJSON)
+		if err != nil {
+			return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
+		}
+
+		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(jsonString))
 		if err != nil {
 			return fmt.Errorf("failed to create http Request: %w", err)
 		}
-		req.Header.Set("Content-Type", "text/plain")
+		req.Header.Set("Content-Type", contentType)
 		resp, err := client.Do(req)
 		if err != nil {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -49,21 +61,33 @@ func SendGauge(client *http.Client, sendInfo []uint8, hostAddr HostPort) (err er
 		}
 		return
 	}
-	for attr, value := range mapInfo {
+	for attr, value := range sendInfo {
 		err = iterationLogic(attr, value)
 		if err != nil {
 			return fmt.Errorf("error in SendGauge: %w", err)
 		}
+		break
 	}
 	return
 }
 
 func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/update/counter/PollCount/" + strconv.Itoa(pollCount)
-	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBufferString(strconv.Itoa(pollCount)))
+	pollCount64 := int64(pollCount)
+	sendJSON := types.Metrics{
+		ID:    "PollCount",
+		MType: "counter",
+		Delta: &pollCount64,
+	}
+	jsonString, err := json.Marshal(sendJSON)
+	if err != nil {
+		return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
+	}
+	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return
 	}
+	req.Header.Set("Content-Type", contentType)
 	resp, err := client.Do(req)
 	if err != nil {
 		return

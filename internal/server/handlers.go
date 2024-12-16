@@ -2,71 +2,49 @@ package server
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (
 	GAUGE         = "gauge"
 	COUNTER       = "counter"
 	InternalError = "Internal error"
+	contentType   = "application/json"
 )
 
-func parseGaugeMetricValue(value string) (num float64, err error) {
-	num, err = strconv.ParseFloat(value, 64)
-	return
-}
-
-func parseCounterMetricValue(value string) (num int64, err error) {
-	num, err = strconv.ParseInt(value, 10, 64)
-	return
-}
-
-func saveMetricValue(mType, mName, value string, storage *memStorage) (err error) {
-	switch mType {
-	case GAUGE:
-		var num float64
-		num, err = parseGaugeMetricValue(value)
-		if err != nil {
-			return
-		}
-		storage.SetGauge(mName, num)
-	case COUNTER:
-		var num int64
-		num, err = parseCounterMetricValue(value)
-		if err != nil {
-			return
-		}
-		storage.SetCounter(mName, num)
-	}
-	return
-}
-
-func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
+func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", "text/plain")
+		res.Header().Set("Content-type", contentType)
 
-		metricType := req.PathValue("mType")
-		if metricType != GAUGE && metricType != COUNTER {
-			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
-			http.Error(res, errorMsg, http.StatusBadRequest)
+		bodyByte, err := io.ReadAll(req.Body)
+		if err != nil {
+			error_msg := "error in read response body: " + err.Error()
+			http.Error(res, error_msg, http.StatusInternalServerError)
 			return
 		}
+		metricData := types.Metrics{}
+		err = json.Unmarshal(bodyByte, &metricData)
 
-		metricName := req.PathValue("metric")
-		metricValue := req.PathValue("value")
+		metricName := metricData.ID
 
-		err := saveMetricValue(metricType, metricName, metricValue, storage)
-		if err != nil {
-			errorMsg := fmt.Sprintf("Value of metric must be numeric, got %s, err: %v\n", metricValue, err)
+		switch metricData.MType {
+		case GAUGE:
+			storage.SetGauge(metricName, *metricData.Value)
+		case COUNTER:
+			storage.SetCounter(metricName, *metricData.Delta)
+		default:
+			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricData.MType
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
 
 		res.WriteHeader(http.StatusOK)
-		_, err = res.Write([]byte("OK"))
+		_, err = res.Write(bodyByte)
 		if err != nil {
 			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
 			http.Error(res, InternalError, http.StatusInternalServerError)
@@ -75,7 +53,7 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 	}
 }
 
-func getMetricValue(mType, mName string, storage *memStorage) (num interface{}, ok bool) {
+func getMetricValue(mType, mName string, storage *types.MemStorage) (num interface{}, ok bool) {
 	switch mType {
 	case GAUGE:
 		num, ok = storage.GetGauge(mName)
@@ -87,7 +65,7 @@ func getMetricValue(mType, mName string, storage *memStorage) (num interface{}, 
 	return
 }
 
-func GetMetricHandle(storage *memStorage) http.HandlerFunc {
+func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-type", "text/plain")
 		metricType := req.PathValue("mType")
@@ -125,7 +103,7 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 	}
 }
 
-func ListMetricHandle(storage *memStorage) http.HandlerFunc {
+func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set("Content-type", "text/plain")
 

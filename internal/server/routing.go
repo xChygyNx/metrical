@@ -8,6 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.uber.org/zap"
+
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 var sugar zap.SugaredLogger
@@ -16,14 +18,14 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		responseData := &responseData{
-			status: 0,
-			size:   0,
+		responseData := &types.ResponseData{
+			Status: 0,
+			Size:   0,
 		}
 
-		lrw := loggingResponseWriter{
+		lrw := types.LoggingResponseWriter{
 			ResponseWriter: w,
-			responseData:   responseData,
+			ResponseData:   responseData,
 		}
 
 		uri := r.RequestURI
@@ -35,9 +37,9 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 		sugar.Infoln(
 			"uri", uri,
 			"method", method,
-			"status", responseData.status,
+			"status", responseData.Status,
 			"duration", duration,
-			"size", responseData.size,
+			"size", responseData.Size,
 		)
 	}
 	return logFn
@@ -57,7 +59,7 @@ func Routing() error {
 	}()
 	sugar = *logger.Sugar()
 
-	storage := GetMemStorage()
+	storage := types.GetMemStorage()
 	router := chi.NewRouter()
 	router.Post("/update/{mType}/{metric}/{value}",
 		middlewareLogger(SaveMetricHandle(storage), sugar))

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/xChygyNx/metrical/internal/server/types"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -87,7 +88,7 @@ func TestStatusMetricHandler(t *testing.T) {
 			},
 		},
 	}
-	storage := GetMemStorage()
+	storage := types.GetMemStorage()
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, http.NoBody)

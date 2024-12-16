@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
@@ -59,11 +58,7 @@ func Run() error {
 			runtime.ReadMemStats(&memStats)
 			pollCount++
 		case <-reportTicker.C:
-			sendInfo, err := json.Marshal(prepareStatsForSend(&memStats))
-			if err != nil {
-				log.Println(err)
-				continue
-			}
+			sendInfo := prepareStatsForSend(&memStats)
 			client := &http.Client{}
 
 			err = SendGauge(client, sendInfo, config.HostAddr)
