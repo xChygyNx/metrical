@@ -1,7 +1,9 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -22,29 +24,76 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		res.Header().Set("Content-type", contentType)
 
 		bodyByte, err := io.ReadAll(req.Body)
+		defer func() {
+			err = req.Body.Close()
+		}()
 		if err != nil {
 			error_msg := "error in read response body: " + err.Error()
 			http.Error(res, error_msg, http.StatusInternalServerError)
 			return
 		}
 		metricData := types.Metrics{}
-		err = json.Unmarshal(bodyByte, &metricData)
+		var responseData types.Metrics
+		if req.Header.Get("Content-Type") == contentType {
+			requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+			err = requestDecoder.Decode(&metricData)
+			if err != nil {
+				errorMsg := "error in decode response body: " + err.Error()
+				log.Println(errorMsg)
+				http.Error(res, errorMsg, http.StatusInternalServerError)
+				return
+			}
+			metricName := metricData.ID
 
-		metricName := metricData.ID
+			switch metricData.MType {
+			case GAUGE:
+				storage.SetGauge(metricName, *metricData.Value)
+				value, ok := storage.GetGauge(metricData.ID)
+				if !ok {
+					errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
+					log.Println(errorMsg)
+					http.Error(res, errorMsg, http.StatusInternalServerError)
+					return
+				}
+				responseData = types.Metrics{
+					ID:    metricData.ID,
+					MType: metricData.MType,
+					Value: &value,
+				}
+			case COUNTER:
+				storage.SetCounter(metricName, *metricData.Delta)
+				value, ok := storage.GetCounter(metricData.ID)
+				if !ok {
+					errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
+					log.Println(errorMsg)
+					http.Error(res, errorMsg, http.StatusInternalServerError)
+					return
+				}
+				responseData = types.Metrics{
+					ID:    metricData.ID,
+					MType: metricData.MType,
+					Delta: &value,
+				}
+			default:
+				errorMsg := "Unknown metric type, must be gauge or counter, got " + metricData.MType
+				http.Error(res, errorMsg, http.StatusBadRequest)
+				return
+			}
+		} else {
+			http.Error(res, "incorrect Content-Type of request. Must be application/json", http.StatusBadRequest)
+			return
+		}
 
-		switch metricData.MType {
-		case GAUGE:
-			storage.SetGauge(metricName, *metricData.Value)
-		case COUNTER:
-			storage.SetCounter(metricName, *metricData.Delta)
-		default:
-			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricData.MType
-			http.Error(res, errorMsg, http.StatusBadRequest)
+		encodedResponseData, err := json.Marshal(responseData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
+			log.Println(errorMsg)
+			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		res.WriteHeader(http.StatusOK)
-		_, err = res.Write(bodyByte)
+		_, err = res.Write(encodedResponseData)
 		if err != nil {
 			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
 			http.Error(res, InternalError, http.StatusInternalServerError)

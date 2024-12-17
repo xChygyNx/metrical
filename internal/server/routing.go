@@ -61,7 +61,7 @@ func Routing() error {
 
 	storage := types.GetMemStorage()
 	router := chi.NewRouter()
-	router.Post("/update/{mType}/{metric}/{value}",
+	router.Post("/update",
 		middlewareLogger(SaveMetricHandle(storage), sugar))
 	router.Get("/value/{mType}/{metric}",
 		middlewareLogger(GetMetricHandle(storage), sugar))

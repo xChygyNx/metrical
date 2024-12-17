@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/xChygyNx/metrical/internal/server/types"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-
-	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (
@@ -19,8 +17,7 @@ const (
 
 func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
-		urlString := "http://" + hostAddr.String() + "/update/gauge/" + attr + "/" +
-			strconv.FormatFloat(value, 'f', -1, 64)
+		urlString := "http://" + hostAddr.String() + "/update"
 
 		sendJSON := types.Metrics{
 			ID:    attr,
@@ -66,13 +63,12 @@ func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPo
 		if err != nil {
 			return fmt.Errorf("error in SendGauge: %w", err)
 		}
-		break
 	}
 	return
 }
 
 func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err error) {
-	counterPath := "http://" + hostAddr.String() + "/update/counter/PollCount/" + strconv.Itoa(pollCount)
+	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
 	sendJSON := types.Metrics{
 		ID:    "PollCount",
