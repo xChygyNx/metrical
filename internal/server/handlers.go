@@ -18,6 +18,7 @@ const (
 	InternalError   = "Internal error"
 	jsonContentType = "application/json"
 	textContentType = "text/plain"
+	contentType     = "Content-type"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -52,7 +53,7 @@ func saveMetricValue(mType, mName, value string, storage *types.MemStorage) (err
 
 func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", textContentType)
+		res.Header().Set(contentType, textContentType)
 
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
@@ -83,7 +84,7 @@ func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
 
 func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", jsonContentType)
+		res.Header().Set(contentType, jsonContentType)
 
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
@@ -178,7 +179,7 @@ func getMetricValue(mType, mName string, storage *types.MemStorage) (num interfa
 
 func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", textContentType)
+		res.Header().Set(contentType, textContentType)
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
 			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
@@ -216,7 +217,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", textContentType)
+		res.Header().Set(contentType, textContentType)
 
 		metricsInfo := map[string]map[string]string{
 			"Gauges":   storage.GetGauges(),

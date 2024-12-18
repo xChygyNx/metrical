@@ -557,7 +557,7 @@ issues:
   exclude-rules:
     - path: "_test\\.go"
       text: "fieldalignment: struct with \\d+ pointer bytes could be \\d+"
-    - path: "internal/server/types_test.go"
+    - path: "internal/server/types/types_test.go"
       text: "lines are duplicate of"
     - path: "internal/server/handlers_test.go"
       text: "range-val-address: suspicious assignment of 'test'. range-loop variables always have the same address"

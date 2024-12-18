@@ -63,24 +63,26 @@ func TestSetGaugeMetricHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, bytes.NewBuffer(encodeData))
 			request.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
-			handler := SaveMetricHandleOld(storage)
+			handler := SaveMetricHandle(storage)
 			handler(w, request)
 			result := w.Result()
 
 			require.Equal(t, test.want.code, result.StatusCode)
-			defer func() {
-				err := result.Body.Close()
+			if result.StatusCode == http.StatusOK {
+				defer func() {
+					err := result.Body.Close()
+					require.NoError(t, err)
+				}()
+				encodedBody, err := io.ReadAll(result.Body)
 				require.NoError(t, err)
-			}()
-			encodedBody, err := io.ReadAll(result.Body)
-			require.NoError(t, err)
 
-			var resultData types.Metrics
-			err = json.Unmarshal(encodedBody, &resultData)
-			require.NoError(t, err)
-			assert.True(t, reflect.DeepEqual(resultData, test.reqBody))
+				var resultData types.Metrics
+				err = json.Unmarshal(encodedBody, &resultData)
+				require.NoError(t, err)
+				assert.True(t, reflect.DeepEqual(resultData, test.reqBody))
 
-			assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
+				assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
+			}
 		})
 	}
 }
@@ -170,7 +172,7 @@ func TestStatusMetricHandler(t *testing.T) {
 				request.SetPathValue(k, v)
 			}
 			w := httptest.NewRecorder()
-			handler := SaveMetricHandle(storage)
+			handler := SaveMetricHandleOld(storage)
 			handler(w, request)
 			result := w.Result()
 
