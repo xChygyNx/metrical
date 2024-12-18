@@ -28,8 +28,8 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			err = req.Body.Close()
 		}()
 		if err != nil {
-			error_msg := "error in read response body: " + err.Error()
-			http.Error(res, error_msg, http.StatusInternalServerError)
+			errorMsg := "error in read response body: " + err.Error()
+			http.Error(res, errorMsg, http.StatusInternalServerError)
 			return
 		}
 		metricData := types.Metrics{}
