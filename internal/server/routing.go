@@ -63,6 +63,8 @@ func Routing() error {
 	router := chi.NewRouter()
 	router.Post("/update",
 		middlewareLogger(SaveMetricHandle(storage), sugar))
+	router.Post("/update/{mType}/{metric}/{value}",
+		middlewareLogger(SaveMetricHandleOld(storage), sugar))
 	router.Get("/value/{mType}/{metric}",
 		middlewareLogger(GetMetricHandle(storage), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))

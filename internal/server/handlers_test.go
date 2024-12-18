@@ -19,14 +19,13 @@ func TestSetGaugeMetricHandler(t *testing.T) {
 	type want struct {
 		contentType string
 		code        int
-		resBody     types.Metrics
 	}
 	tests := []struct {
+		reqBody types.Metrics
 		name    string
 		url     string
-		value   float64
-		reqBody types.Metrics
 		want    want
+		value   float64
 	}{
 		{
 			name:  "Incorrect metric type",
@@ -64,7 +63,7 @@ func TestSetGaugeMetricHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, test.url, bytes.NewBuffer(encodeData))
 			request.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
-			handler := SaveMetricHandle(storage)
+			handler := SaveMetricHandleOld(storage)
 			handler(w, request)
 			result := w.Result()
 
@@ -80,6 +79,108 @@ func TestSetGaugeMetricHandler(t *testing.T) {
 			err = json.Unmarshal(encodedBody, &resultData)
 			require.NoError(t, err)
 			assert.True(t, reflect.DeepEqual(resultData, test.reqBody))
+
+			assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
+		})
+	}
+}
+
+func TestStatusMetricHandler(t *testing.T) {
+	type want struct {
+		contentType string
+		code        int
+	}
+	tests := []struct {
+		name       string
+		url        string
+		pathValues map[string]string
+		want       want
+	}{
+		{
+			name: "Incorrect gauge path",
+			url:  "/update/other/metric/12.3456",
+			pathValues: map[string]string{
+				"mType":  "other",
+				"metric": "metric",
+				"value":  "12.3456",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Correct gauge path",
+			url:  "/update/gauge/Mallocs/100.123",
+			pathValues: map[string]string{
+				"mType":  "gauge",
+				"metric": "Mallocs",
+				"value":  "100.123",
+			},
+			want: want{
+				code:        http.StatusOK,
+				contentType: "text/plain",
+			},
+		},
+		{
+			name: "Inorrect gauge metric value",
+			url:  "/update/gauge/Mallocs/none",
+			pathValues: map[string]string{
+				"mType":  "gauge",
+				"metric": "Mallocs",
+				"value":  "none",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+		{
+			name: "Correct counter path",
+			url:  "/update/counter/PollCount/100",
+			pathValues: map[string]string{
+				"mType":  "counter",
+				"metric": "PollCount",
+				"value":  "100",
+			},
+			want: want{
+				code:        http.StatusOK,
+				contentType: "text/plain",
+			},
+		},
+		{
+			name: "Incorrect counter value",
+			url:  "/update/counter/PollCount/none",
+			pathValues: map[string]string{
+				"mType":  "counter",
+				"metric": "PollCount",
+				"value":  "none",
+			},
+			want: want{
+				code:        http.StatusBadRequest,
+				contentType: "text/plain; charset=utf-8",
+			},
+		},
+	}
+	storage := types.GetMemStorage()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, test.url, http.NoBody)
+			for k, v := range test.pathValues {
+				request.SetPathValue(k, v)
+			}
+			w := httptest.NewRecorder()
+			handler := SaveMetricHandle(storage)
+			handler(w, request)
+			result := w.Result()
+
+			require.Equal(t, test.want.code, result.StatusCode)
+			defer func() {
+				err := result.Body.Close()
+				require.NoError(t, err)
+			}()
+			_, err := io.ReadAll(result.Body)
+			require.NoError(t, err)
 
 			assert.Equal(t, test.want.contentType, result.Header.Get("Content-Type"))
 		})

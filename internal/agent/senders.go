@@ -4,11 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/xChygyNx/metrical/internal/server/types"
 	"io"
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (

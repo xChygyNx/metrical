@@ -559,6 +559,8 @@ issues:
       text: "fieldalignment: struct with \\d+ pointer bytes could be \\d+"
     - path: "internal/server/types_test.go"
       text: "lines are duplicate of"
+    - path: "internal/server/handlers_test.go"
+      text: "range-val-address: suspicious assignment of 'test'. range-loop variables always have the same address"
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0
