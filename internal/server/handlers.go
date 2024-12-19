@@ -97,7 +97,6 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}
 		var metricData types.Metrics
 
-		//if req.Header.Get("Content-Type") == jsonContentType {
 		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
 		err = requestDecoder.Decode(&metricData)
 		if err != nil {
@@ -142,10 +141,6 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
-		//} else {
-		//	http.Error(res, "incorrect Content-Type of request. Must be application/json", http.StatusBadRequest)
-		//	return
-		//}
 		encodedResponseData, err := json.Marshal(responseData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
