@@ -121,7 +121,6 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 				ID:    metricData.ID,
 				MType: metricData.MType,
 				Value: &value,
-				Delta: nil,
 			}
 		case COUNTER:
 			storage.SetCounter(metricName, *metricData.Delta)
@@ -135,7 +134,6 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			responseData = types.Metrics{
 				ID:    metricData.ID,
 				MType: metricData.MType,
-				Value: nil,
 				Delta: &value,
 			}
 		default:
@@ -211,18 +209,56 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
-func GetAllMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetJsonMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
-		jsonData, err := json.Marshal(storage)
+		bodyByte, err := io.ReadAll(req.Body)
+		defer func() {
+			err = req.Body.Close()
+		}()
 		if err != nil {
-			errorMsg := fmt.Errorf("error in Marshal metric storage: %w", err)
+			errorMsg := "error in read response body: " + err.Error()
+			http.Error(res, errorMsg, http.StatusInternalServerError)
+			return
+		}
+		var reqJson types.Metrics
+
+		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+		err = requestDecoder.Decode(&reqJson)
+		if err != nil {
+			errorMsg := "error in decode response body: " + err.Error()
+			log.Println(errorMsg)
+			http.Error(res, errorMsg, http.StatusInternalServerError)
+			return
+		}
+		mType := reqJson.MType
+		switch mType {
+		case GAUGE:
+			value, ok := storage.GetGauge(reqJson.ID)
+			if !ok {
+				errorMsg := fmt.Sprintf("Gauge metric %s don't saved", reqJson.ID)
+				http.Error(res, errorMsg, http.StatusBadRequest)
+				return
+			}
+			reqJson.Value = &value
+		case COUNTER:
+			delta, ok := storage.GetCounter(reqJson.ID)
+			if !ok {
+				errorMsg := fmt.Sprintf("Counter metric %s don't saved", reqJson.ID)
+				http.Error(res, errorMsg, http.StatusBadRequest)
+				return
+			}
+			reqJson.Delta = &delta
+		}
+		responseData, err := json.Marshal(reqJson)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
 			log.Println(errorMsg)
 			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
 			return
 		}
 		res.WriteHeader(http.StatusOK)
-		_, err = res.Write(jsonData)
+		_, err = res.Write(responseData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in write body of response: %w", err)
 			log.Println(errorMsg)

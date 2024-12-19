@@ -70,9 +70,9 @@ func Routing() error {
 	router.Get("/value/{mType}/{metric}",
 		middlewareLogger(GetMetricHandle(storage), sugar))
 	router.Post("/value",
-		middlewareLogger(GetAllMetricHandle(storage), sugar))
+		middlewareLogger(GetJsonMetricHandle(storage), sugar))
 	router.Post("/value/",
-		middlewareLogger(GetAllMetricHandle(storage), sugar))
+		middlewareLogger(GetJsonMetricHandle(storage), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 
 	config, err := GetConfig()
