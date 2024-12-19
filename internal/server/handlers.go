@@ -226,7 +226,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
 		err = requestDecoder.Decode(&reqJSON)
 		if err != nil {
-			errorMsg := "error in decode response body: " + err.Error()
+			errorMsg := "error in  decode response body: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusInternalServerError)
 			return
