@@ -209,6 +209,26 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
+func GetAllMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		jsonData, err := json.Marshal(storage)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in Marshal metric storage: %w", err)
+			log.Println(errorMsg)
+			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			return
+		}
+		res.WriteHeader(http.StatusOK)
+		_, err = res.Write(jsonData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in write body of response: %w", err)
+			log.Println(errorMsg)
+			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
 func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)

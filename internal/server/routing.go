@@ -69,6 +69,10 @@ func Routing() error {
 		middlewareLogger(SaveMetricHandleOld(storage), sugar))
 	router.Get("/value/{mType}/{metric}",
 		middlewareLogger(GetMetricHandle(storage), sugar))
+	router.Get("/value",
+		middlewareLogger(GetAllMetricHandle(storage), sugar))
+	router.Get("/value/",
+		middlewareLogger(GetAllMetricHandle(storage), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 
 	config, err := GetConfig()
