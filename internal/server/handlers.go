@@ -121,6 +121,7 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 				ID:    metricData.ID,
 				MType: metricData.MType,
 				Value: &value,
+				Delta: nil,
 			}
 		case COUNTER:
 			storage.SetCounter(metricName, *metricData.Delta)
@@ -134,6 +135,7 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			responseData = types.Metrics{
 				ID:    metricData.ID,
 				MType: metricData.MType,
+				Value: nil,
 				Delta: &value,
 			}
 		default:
