@@ -1,17 +1,24 @@
 package server
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
+
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (
-	GAUGE         = "gauge"
-	COUNTER       = "counter"
-	InternalError = "Internal error"
+	GAUGE           = "gauge"
+	COUNTER         = "counter"
+	InternalError   = "Internal error"
+	jsonContentType = "application/json"
+	textContentType = "text/plain"
+	contentType     = "Content-type"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -24,7 +31,7 @@ func parseCounterMetricValue(value string) (num int64, err error) {
 	return
 }
 
-func saveMetricValue(mType, mName, value string, storage *memStorage) (err error) {
+func saveMetricValue(mType, mName, value string, storage *types.MemStorage) (err error) {
 	switch mType {
 	case GAUGE:
 		var num float64
@@ -44,9 +51,9 @@ func saveMetricValue(mType, mName, value string, storage *memStorage) (err error
 	return
 }
 
-func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
+func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", "text/plain")
+		res.Header().Set(contentType, textContentType)
 
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
@@ -75,7 +82,84 @@ func SaveMetricHandle(storage *memStorage) http.HandlerFunc {
 	}
 }
 
-func getMetricValue(mType, mName string, storage *memStorage) (num interface{}, ok bool) {
+func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set(contentType, jsonContentType)
+
+		bodyByte, err := io.ReadAll(req.Body)
+		defer func() {
+			err = req.Body.Close()
+		}()
+		if err != nil {
+			errorMsg := "error in read response body: " + err.Error()
+			http.Error(res, errorMsg, http.StatusInternalServerError)
+			return
+		}
+		var metricData types.Metrics
+
+		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+		err = requestDecoder.Decode(&metricData)
+		if err != nil {
+			errorMsg := "error in decode response body: " + err.Error()
+			log.Println(errorMsg)
+			http.Error(res, errorMsg, http.StatusInternalServerError)
+			return
+		}
+		metricName := metricData.ID
+		var responseData types.Metrics
+		switch metricData.MType {
+		case GAUGE:
+			storage.SetGauge(metricName, *metricData.Value)
+			value, ok := storage.GetGauge(metricData.ID)
+			if !ok {
+				errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
+				log.Println(errorMsg)
+				http.Error(res, errorMsg, http.StatusInternalServerError)
+				return
+			}
+			responseData = types.Metrics{
+				ID:    metricData.ID,
+				MType: metricData.MType,
+				Value: &value,
+			}
+		case COUNTER:
+			storage.SetCounter(metricName, *metricData.Delta)
+			value, ok := storage.GetCounter(metricData.ID)
+			if !ok {
+				errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
+				log.Println(errorMsg)
+				http.Error(res, errorMsg, http.StatusInternalServerError)
+				return
+			}
+			responseData = types.Metrics{
+				ID:    metricData.ID,
+				MType: metricData.MType,
+				Delta: &value,
+			}
+		default:
+			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricData.MType
+			http.Error(res, errorMsg, http.StatusBadRequest)
+			return
+		}
+		encodedResponseData, err := json.Marshal(responseData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
+			log.Println(errorMsg)
+			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		res.WriteHeader(http.StatusOK)
+		_, err = res.Write(encodedResponseData)
+		if err != nil {
+			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
+			http.Error(res, InternalError, http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func getMetricValue(mType, mName string, storage *types.MemStorage) (num interface{}, ok bool) {
 	switch mType {
 	case GAUGE:
 		num, ok = storage.GetGauge(mName)
@@ -87,9 +171,9 @@ func getMetricValue(mType, mName string, storage *memStorage) (num interface{}, 
 	return
 }
 
-func GetMetricHandle(storage *memStorage) http.HandlerFunc {
+func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", "text/plain")
+		res.Header().Set(contentType, textContentType)
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
 			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
@@ -125,9 +209,68 @@ func GetMetricHandle(storage *memStorage) http.HandlerFunc {
 	}
 }
 
-func ListMetricHandle(storage *memStorage) http.HandlerFunc {
+func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set("Content-type", "text/plain")
+		res.Header().Set(contentType, jsonContentType)
+		bodyByte, err := io.ReadAll(req.Body)
+		defer func() {
+			err = req.Body.Close()
+		}()
+		if err != nil {
+			errorMsg := "error in read response body: " + err.Error()
+			http.Error(res, errorMsg, http.StatusInternalServerError)
+			return
+		}
+		var reqJSON types.Metrics
+
+		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+		err = requestDecoder.Decode(&reqJSON)
+		if err != nil {
+			errorMsg := "error in  decode response body: " + err.Error()
+			log.Println(errorMsg)
+			http.Error(res, errorMsg, http.StatusInternalServerError)
+			return
+		}
+		mType := reqJSON.MType
+		switch mType {
+		case GAUGE:
+			value, ok := storage.GetGauge(reqJSON.ID)
+			if !ok {
+				errorMsg := fmt.Sprintf("Gauge metric %s don't saved", reqJSON.ID)
+				http.Error(res, errorMsg, http.StatusNotFound)
+				return
+			}
+			reqJSON.Value = &value
+		case COUNTER:
+			delta, ok := storage.GetCounter(reqJSON.ID)
+			if !ok {
+				errorMsg := fmt.Sprintf("Counter metric %s don't saved", reqJSON.ID)
+				http.Error(res, errorMsg, http.StatusNotFound)
+				return
+			}
+			reqJSON.Delta = &delta
+		}
+		responseData, err := json.Marshal(reqJSON)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
+			log.Println(errorMsg)
+			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			return
+		}
+		res.WriteHeader(http.StatusOK)
+		_, err = res.Write(responseData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in write body of response: %w", err)
+			log.Println(errorMsg)
+			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set(contentType, textContentType)
 
 		metricsInfo := map[string]map[string]string{
 			"Gauges":   storage.GetGauges(),
