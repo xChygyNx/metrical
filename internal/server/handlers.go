@@ -211,6 +211,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 func GetAllMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set(contentType, jsonContentType)
 		jsonData, err := json.Marshal(storage)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in Marshal metric storage: %w", err)
