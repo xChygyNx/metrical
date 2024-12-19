@@ -209,7 +209,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
-func GetJsonMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 		bodyByte, err := io.ReadAll(req.Body)
@@ -221,36 +221,36 @@ func GetJsonMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusInternalServerError)
 			return
 		}
-		var reqJson types.Metrics
+		var reqJSON types.Metrics
 
 		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
-		err = requestDecoder.Decode(&reqJson)
+		err = requestDecoder.Decode(&reqJSON)
 		if err != nil {
 			errorMsg := "error in decode response body: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusInternalServerError)
 			return
 		}
-		mType := reqJson.MType
+		mType := reqJSON.MType
 		switch mType {
 		case GAUGE:
-			value, ok := storage.GetGauge(reqJson.ID)
+			value, ok := storage.GetGauge(reqJSON.ID)
 			if !ok {
-				errorMsg := fmt.Sprintf("Gauge metric %s don't saved", reqJson.ID)
-				http.Error(res, errorMsg, http.StatusBadRequest)
+				errorMsg := fmt.Sprintf("Gauge metric %s don't saved", reqJSON.ID)
+				http.Error(res, errorMsg, http.StatusNotFound)
 				return
 			}
-			reqJson.Value = &value
+			reqJSON.Value = &value
 		case COUNTER:
-			delta, ok := storage.GetCounter(reqJson.ID)
+			delta, ok := storage.GetCounter(reqJSON.ID)
 			if !ok {
-				errorMsg := fmt.Sprintf("Counter metric %s don't saved", reqJson.ID)
-				http.Error(res, errorMsg, http.StatusBadRequest)
+				errorMsg := fmt.Sprintf("Counter metric %s don't saved", reqJSON.ID)
+				http.Error(res, errorMsg, http.StatusNotFound)
 				return
 			}
-			reqJson.Delta = &delta
+			reqJSON.Delta = &delta
 		}
-		responseData, err := json.Marshal(reqJson)
+		responseData, err := json.Marshal(reqJSON)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
 			log.Println(errorMsg)
