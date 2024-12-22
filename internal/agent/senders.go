@@ -13,7 +13,8 @@ import (
 )
 
 const (
-	contentType = "application/json"
+	contentType   = "application/json"
+	contentEncode = "gzip"
 )
 
 func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
@@ -30,11 +31,17 @@ func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPo
 			return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 		}
 
-		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(jsonString))
+		compressJSON, err := compress(jsonString)
+		if err != nil {
+			return fmt.Errorf("error in compress gauge metrics: %w", err)
+		}
+
+		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(compressJSON))
 		if err != nil {
 			return fmt.Errorf("failed to create http Request: %w", err)
 		}
 		req.Header.Set("Content-Type", contentType)
+		req.Header.Set("Content-Encoding", contentEncode)
 		resp, err := client.Do(req)
 		if err != nil {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -78,13 +85,18 @@ func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err err
 	}
 	jsonString, err := json.Marshal(sendJSON)
 	if err != nil {
-		return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
+		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
-	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(jsonString))
+	compressJSON, err := compress(jsonString)
+	if err != nil {
+		return fmt.Errorf("error in compress counter metrics: %w", err)
+	}
+	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(compressJSON))
 	if err != nil {
 		return
 	}
 	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("Content-Encoding", contentEncode)
 	resp, err := client.Do(req)
 	if err != nil {
 		return

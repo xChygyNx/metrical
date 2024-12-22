@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -291,4 +292,20 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			return
 		}
 	}
+}
+
+func GzipHandler(internal http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if !types.IsGzipAccepted(req.Header) {
+			internal.ServeHTTP(w, req)
+			return
+		}
+		gz, err := gzip.NewWriterLevel(w, gzip.BestCompression)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in create gzip writer: %w", err)
+			http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+		}
+		w.Header().Set("Content-Encoding", "gzip")
+		internal.ServeHTTP(types.GzipWriter{ResponseWriter: w, Writer: gz}, req)
+	})
 }
