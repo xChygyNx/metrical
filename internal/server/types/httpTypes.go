@@ -23,5 +23,5 @@ func (gw GzipWriter) Write(b []byte) (int, error) {
 	if err != nil {
 		return 0, fmt.Errorf("error in write of GzipWritrer: %w", err)
 	}
-	return numRead, err
+	return numRead, nil
 }

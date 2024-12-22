@@ -23,20 +23,3 @@ func compress(data []byte) (res []byte, err error) {
 	res = buf.Bytes()
 	return
 }
-
-//func decompress(data []byte) (res []byte, err error) {
-//	gzipReader, err := gzip.NewReader(bytes.NewReader(data))
-//	if err != nil {
-//		return nil, fmt.Errorf("error in create gzip reader: %w", err)
-//	}
-//	defer func() {
-//		err = gzipReader.Close()
-//	}()
-//
-//	var buf bytes.Buffer
-//	_, err = buf.ReadFrom(gzipReader)
-//	if err != nil {
-//		return nil, fmt.Errorf("error in decompress data: %w", err)
-//	}
-//	return buf.Bytes(), nil
-//}
