@@ -304,8 +304,9 @@ func GzipHandler(internal http.Handler) http.Handler {
 		if err != nil {
 			errorMsg := fmt.Errorf("error in create gzip writer: %w", err)
 			http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+			return
 		}
-		w.Header().Set("Content-Encoding", "gzip")
+		w.Header().Set("Accept-Encoding", "gzip")
 		internal.ServeHTTP(types.GzipWriter{ResponseWriter: w, Writer: gz}, req)
 	})
 }

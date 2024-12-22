@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 )
@@ -18,5 +19,9 @@ type GzipWriter struct {
 }
 
 func (gw GzipWriter) Write(b []byte) (int, error) {
-	return gw.Writer.Write(b)
+	numRead, err := gw.Writer.Write(b)
+	if err != nil {
+		return 0, fmt.Errorf("error in write of GzipWritrer: %w", err)
+	}
+	return numRead, err
 }
