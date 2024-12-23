@@ -304,6 +304,7 @@ func GzipHandler(internal http.Handler) http.Handler {
 				if err != nil {
 					errorMsg := fmt.Errorf("error in close gzipWriter: %w", err)
 					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+					return
 				}
 			}()
 		}
@@ -320,6 +321,7 @@ func GzipHandler(internal http.Handler) http.Handler {
 				if err != nil {
 					errorMsg := fmt.Errorf("error in close gzipReader: %w", err)
 					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+					return
 				}
 			}()
 		}

@@ -57,7 +57,7 @@ type gzipReader struct {
 func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 	gr, err := gzip.NewReader(r)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in create gzipReader: %w", err)
 	}
 
 	return &gzipReader{
@@ -69,7 +69,7 @@ func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 func (gr *gzipReader) Close() error {
 	err := gr.ReadCloser.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("error in close gzipReader: %w", err)
 	}
 	return gr.Reader.Close()
 }
