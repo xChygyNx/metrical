@@ -1,6 +1,7 @@
 package types
 
 import (
+	"compress/gzip"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,15 +14,58 @@ type Metrics struct {
 	MType string   `json:"type"`
 }
 
-type GzipWriter struct {
+type gzipWriter struct {
 	http.ResponseWriter
-	Writer io.Writer
+	Writer *gzip.Writer
 }
 
-func (gw GzipWriter) Write(b []byte) (int, error) {
+func NewGzipWriter(w http.ResponseWriter) *gzipWriter {
+	return &gzipWriter{
+		ResponseWriter: w,
+		Writer:         gzip.NewWriter(w),
+	}
+}
+
+func (gw *gzipWriter) Write(b []byte) (int, error) {
 	numRead, err := gw.Writer.Write(b)
 	if err != nil {
 		return 0, fmt.Errorf("error in write of GzipWritrer: %w", err)
 	}
 	return numRead, nil
+}
+
+func (gw *gzipWriter) WriteHeader(statusCode int) {
+	if statusCode < 300 {
+		gw.Header().Set("Content-Encoding", "gzip")
+	}
+	gw.WriteHeader(statusCode)
+}
+
+func (gw *gzipWriter) Close() error {
+	return gw.Writer.Close()
+}
+
+type gzipReader struct {
+	io.ReadCloser
+	Reader *gzip.Reader
+}
+
+func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
+	gr, err := gzip.NewReader(r)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gzipReader{
+		ReadCloser: r,
+		Reader:     gr,
+	}, nil
+}
+
+func (gr *gzipReader) Close() error {
+	err := gr.Close()
+	if err != nil {
+		return err
+	}
+	return gr.Reader.Close()
 }

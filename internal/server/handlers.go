@@ -2,7 +2,6 @@ package server
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -296,17 +295,26 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if !types.IsContentEncoding(req.Header) || !types.IsApplicationJSON(req.Header) {
+		resWriter := w
+		if types.IsAcceptEncoding(req.Header) {
+			gzipWriter := types.NewGzipWriter(w)
+			resWriter = gzipWriter
+			defer gzipWriter.Close()
+		}
+
+		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
+			gzipReader, err := types.NewGzipReader(req.Body)
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+			req.Body = gzipReader
+			defer gzipReader.Close()
+		}
+		if !types.IsContentEncoding(req.Header) || !types.IsCompressData(req.Header) {
 			internal.ServeHTTP(w, req)
 			return
 		}
-		gz, err := gzip.NewWriterLevel(w, gzip.BestCompression)
-		if err != nil {
-			errorMsg := fmt.Errorf("error in create gzip writer: %w", err)
-			http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
-			return
-		}
-		// w.Header().Set("Accept-Encoding", "gzip")
-		internal.ServeHTTP(types.GzipWriter{ResponseWriter: w, Writer: gz}, req)
+		internal.ServeHTTP(resWriter, req)
 	})
 }

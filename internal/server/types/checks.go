@@ -5,6 +5,16 @@ import (
 	"strings"
 )
 
+func IsAcceptEncoding(headers http.Header) bool {
+	values := headers.Values("Accept_Encoding")
+	for _, value := range values {
+		if strings.Contains(value, "gzip") {
+			return true
+		}
+	}
+	return false
+}
+
 func IsContentEncoding(headers http.Header) bool {
 	values := headers.Values("Content-Encoding")
 	for _, value := range values {
@@ -15,10 +25,11 @@ func IsContentEncoding(headers http.Header) bool {
 	return false
 }
 
-func IsApplicationJSON(headers http.Header) bool {
+func IsCompressData(headers http.Header) bool {
 	values := headers.Values("Content-Type")
 	for _, value := range values {
-		if strings.Contains(value, "application/json") {
+		if strings.Contains(value, "application/json") ||
+			strings.Contains(value, "text/html") {
 			return true
 		}
 	}
