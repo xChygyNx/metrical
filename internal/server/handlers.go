@@ -299,7 +299,13 @@ func GzipHandler(internal http.Handler) http.Handler {
 		if types.IsAcceptEncoding(req.Header) {
 			gzipWriter := types.NewGzipWriter(w)
 			resWriter = gzipWriter
-			defer gzipWriter.Close()
+			defer func() {
+				err := gzipWriter.Close()
+				if err != nil {
+					errorMsg := fmt.Errorf("error in close gzipWriter: %w", err)
+					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+				}
+			}()
 		}
 
 		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
@@ -309,7 +315,13 @@ func GzipHandler(internal http.Handler) http.Handler {
 				return
 			}
 			req.Body = gzipReader
-			defer gzipReader.Close()
+			defer func() {
+				err := gzipReader.Close()
+				if err != nil {
+					errorMsg := fmt.Errorf("error in close gzipReader: %w", err)
+					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+				}
+			}()
 		}
 		if !types.IsContentEncoding(req.Header) || !types.IsCompressData(req.Header) {
 			internal.ServeHTTP(w, req)

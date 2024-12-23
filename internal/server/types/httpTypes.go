@@ -35,14 +35,18 @@ func (gw *gzipWriter) Write(b []byte) (int, error) {
 }
 
 func (gw *gzipWriter) WriteHeader(statusCode int) {
-	if statusCode < 300 {
+	if statusCode < http.StatusMultipleChoices {
 		gw.Header().Set("Content-Encoding", "gzip")
 	}
-	gw.WriteHeader(statusCode)
+	gw.ResponseWriter.WriteHeader(statusCode)
 }
 
 func (gw *gzipWriter) Close() error {
-	return gw.Writer.Close()
+	err := gw.Writer.Close()
+	if err != nil {
+		err = fmt.Errorf("error in close of gzipWriter.Writer: %w", err)
+	}
+	return err
 }
 
 type gzipReader struct {
@@ -63,7 +67,7 @@ func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 }
 
 func (gr *gzipReader) Close() error {
-	err := gr.Close()
+	err := gr.ReadCloser.Close()
 	if err != nil {
 		return err
 	}
