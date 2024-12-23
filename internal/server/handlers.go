@@ -296,7 +296,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if !types.IsGzipAccepted(req.Header) {
+		if !types.IsContentEncoding(req.Header) || !types.IsApplicationJSON(req.Header) {
 			internal.ServeHTTP(w, req)
 			return
 		}
