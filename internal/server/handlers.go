@@ -137,7 +137,9 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 				Delta: &value,
 			}
 		default:
-			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricData.MType
+			bodyStr := string(bodyByte)
+			errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
+				"|\n" + bodyStr
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
