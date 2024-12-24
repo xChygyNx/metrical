@@ -80,7 +80,7 @@ func Routing() error {
 		return fmt.Errorf("error in GetConfig: %w", err)
 	}
 
-	err = http.ListenAndServe(config.HostAddr.String(), router)
+	err = http.ListenAndServe(config.HostPort.String(), router)
 	if err != nil {
 		return fmt.Errorf("error with launch http server: %w", err)
 	}
