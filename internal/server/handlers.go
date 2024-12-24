@@ -297,36 +297,36 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		resWriter := w
-
-		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
-			gzipReader, err := types.NewGzipReader(req.Body)
-			if err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-			req.Body = gzipReader
-			defer func() {
-				err := gzipReader.Close()
-				if err != nil {
-					errorMsg := fmt.Errorf("error in close gzipReader: %w", err)
-					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
-					return
-				}
-			}()
-		}
-		if types.IsAcceptEncoding(req.Header) {
-			writer := types.NewGzipWriter(w)
-			resWriter = writer
-			defer func() {
-				err := writer.Close()
-				if err != nil {
-					errorMsg := fmt.Errorf("error in close gzipWriter: %w", err)
-					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
-					return
-				}
-			}()
-		}
-		internal.ServeHTTP(resWriter, req)
+		//resWriter := w
+		//
+		//if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
+		//	gzipReader, err := types.NewGzipReader(req.Body)
+		//	if err != nil {
+		//		w.WriteHeader(http.StatusInternalServerError)
+		//		return
+		//	}
+		//	req.Body = gzipReader
+		//	defer func() {
+		//		err := gzipReader.Close()
+		//		if err != nil {
+		//			errorMsg := fmt.Errorf("error in close gzipReader: %w", err)
+		//			http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+		//			return
+		//		}
+		//	}()
+		//}
+		//if types.IsAcceptEncoding(req.Header) {
+		//	writer := types.NewGzipWriter(w)
+		//	resWriter = writer
+		//	defer func() {
+		//		err := writer.Close()
+		//		if err != nil {
+		//			errorMsg := fmt.Errorf("error in close gzipWriter: %w", err)
+		//			http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+		//			return
+		//		}
+		//	}()
+		//}
+		internal.ServeHTTP(w, req)
 	})
 }
