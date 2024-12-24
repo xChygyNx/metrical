@@ -296,18 +296,6 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		resWriter := w
-		if types.IsAcceptEncoding(req.Header) {
-			gzipWriter := types.NewGzipWriter(w)
-			resWriter = gzipWriter
-			defer func() {
-				err := gzipWriter.Close()
-				if err != nil {
-					errorMsg := fmt.Errorf("error in close gzipWriter: %w", err)
-					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
-					return
-				}
-			}()
-		}
 
 		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
 			gzipReader, err := types.NewGzipReader(req.Body)
