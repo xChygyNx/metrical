@@ -315,9 +315,17 @@ func GzipHandler(internal http.Handler) http.Handler {
 				}
 			}()
 		}
-		if !types.IsContentEncoding(req.Header) || !types.IsCompressData(req.Header) {
-			internal.ServeHTTP(w, req)
-			return
+		if types.IsAcceptEncoding(req.Header) {
+			writer := types.NewGzipWriter(w)
+			resWriter = writer
+			defer func() {
+				err := writer.Close()
+				if err != nil {
+					errorMsg := fmt.Errorf("error in close gzipWriter: %w", err)
+					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+					return
+				}
+			}()
 		}
 		internal.ServeHTTP(resWriter, req)
 	})
