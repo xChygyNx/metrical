@@ -6,7 +6,7 @@ import (
 )
 
 func IsAcceptEncoding(headers http.Header) bool {
-	values := headers.Values("Accept_Encoding")
+	values := headers.Values("Accept-Encoding")
 	for _, value := range values {
 		if strings.Contains(value, "gzip") {
 			return true

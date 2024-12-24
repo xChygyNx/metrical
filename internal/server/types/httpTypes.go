@@ -71,5 +71,9 @@ func (gr *gzipReader) Close() error {
 	if err != nil {
 		return fmt.Errorf("error in close gzipReader: %w", err)
 	}
-	return gr.Reader.Close()
+	err = gr.Reader.Close()
+	if err != nil {
+		err = fmt.Errorf("error in close gzipReader: %w", err)
+	}
+	return err
 }
