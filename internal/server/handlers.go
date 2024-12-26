@@ -51,7 +51,7 @@ func saveMetricValue(mType, mName, value string, storage *types.MemStorage) (err
 	return
 }
 
-func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
+func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
 
@@ -71,6 +71,12 @@ func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
+		if syncInfo.SyncFileRecord {
+			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
+			errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+			http.Error(res, errorMsg, http.StatusBadRequest)
+			return
+		}
 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte("OK"))
@@ -82,7 +88,7 @@ func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
-func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		log.Println("hi from update")
 		res.Header().Set(contentType, jsonContentType)
@@ -141,6 +147,14 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
+
+		if syncInfo.SyncFileRecord {
+			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
+			errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+			http.Error(res, errorMsg, http.StatusBadRequest)
+			return
+		}
+
 		encodedResponseData, err := json.Marshal(responseData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)

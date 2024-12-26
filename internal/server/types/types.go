@@ -15,6 +15,11 @@ type MemStorage struct {
 	Counters map[string]counter `json:"counters"`
 }
 
+type SyncInfo struct {
+	FileMetricStorage string
+	SyncFileRecord    bool
+}
+
 func GetMemStorage() *MemStorage {
 	instance := new(MemStorage)
 	instance.Gauges = map[string]gauge{}

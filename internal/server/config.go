@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/xChygyNx/metrical/internal/server/types"
 	"os"
 	"strconv"
 	"strings"
@@ -101,4 +102,11 @@ func GetConfig() (*Config, error) {
 	}
 
 	return config, nil
+}
+
+func GetSyncInfo(conf Config) types.SyncInfo {
+	return types.SyncInfo{
+		FileMetricStorage: conf.FileStoragePath,
+		SyncFileRecord:    conf.StoreInterval == 0,
+	}
 }

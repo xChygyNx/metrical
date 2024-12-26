@@ -58,15 +58,34 @@ func Routing() error {
 		}
 	}()
 	sugar = *logger.Sugar()
-
 	storage := types.GetMemStorage()
+
+	config, err := GetConfig()
+	if err != nil {
+		return fmt.Errorf("error in GetConfig: %w", err)
+	}
+
+	if config.Restore {
+		err = restoreMetricStore(config.FileStoragePath, storage)
+		if err != nil {
+			return fmt.Errorf("error with restore MemStorage from file: %w", err)
+		}
+	}
+
+	syncInfo := GetSyncInfo(*config)
+	if !syncInfo.SyncFileRecord {
+		go func() {
+			err = fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
+		}()
+	}
+
 	router := chi.NewRouter()
 	router.Post("/update",
-		middlewareLogger(GzipHandler(SaveMetricHandle(storage)), sugar))
+		middlewareLogger(GzipHandler(SaveMetricHandle(storage, syncInfo)), sugar))
 	router.Post("/update/",
-		middlewareLogger(GzipHandler(SaveMetricHandle(storage)), sugar))
+		middlewareLogger(GzipHandler(SaveMetricHandle(storage, syncInfo)), sugar))
 	router.Post("/update/{mType}/{metric}/{value}",
-		middlewareLogger(GzipHandler(SaveMetricHandleOld(storage)), sugar))
+		middlewareLogger(GzipHandler(SaveMetricHandleOld(storage, syncInfo)), sugar))
 	router.Get("/value/{mType}/{metric}",
 		middlewareLogger(GzipHandler(GetMetricHandle(storage)), sugar))
 	router.Post("/value",
@@ -75,12 +94,6 @@ func Routing() error {
 		middlewareLogger(GzipHandler(GetJSONMetricHandle(storage)), sugar))
 	router.Get("/", middlewareLogger(GzipHandler(ListMetricHandle(storage)), sugar))
 
-	config, err := GetConfig()
-	if err != nil {
-		return fmt.Errorf("error in GetConfig: %w", err)
-	}
-
-	go fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
 	err = http.ListenAndServe(config.HostPort.String(), router)
 	if err != nil {
 		return fmt.Errorf("error with launch http server: %w", err)
