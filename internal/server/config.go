@@ -4,10 +4,11 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"github.com/xChygyNx/metrical/internal/server/types"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 type HostPort struct {
@@ -16,10 +17,10 @@ type HostPort struct {
 }
 
 type Config struct {
-	StoreInterval   int
 	FileStoragePath string
-	Restore         bool
 	HostPort        HostPort
+	StoreInterval   int
+	Restore         bool
 }
 
 var StorageFile = "metrics.json"
@@ -56,7 +57,8 @@ func (hp *HostPort) Set(value string) error {
 func parseFlag() *Config {
 	config := new(Config)
 	flag.Var(&config.HostPort, "a", "Net address host:port")
-	flag.IntVar(&config.StoreInterval, "i", 300, "Time period for store metrics in the file")
+	defaultStoreInterval := 300
+	flag.IntVar(&config.StoreInterval, "i", defaultStoreInterval, "Time period for store metrics in the file")
 	flag.StringVar(&config.FileStoragePath, "f", StorageFile, "File path for store metrics")
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
 	flag.Parse()
@@ -82,7 +84,8 @@ func GetConfig() (*Config, error) {
 	if ok {
 		interval, err := strconv.Atoi(storeInterval)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(
+				"environment variable STORE_INTERVAL must be numerical, got %s: %w", storeInterval, err)
 		}
 		config.StoreInterval = interval
 	}
@@ -96,7 +99,8 @@ func GetConfig() (*Config, error) {
 	if ok {
 		restoreBool, err := strconv.ParseBool(restore)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf(
+				"environment variable RESTORE must be bool, got %s: %w", restore, err)
 		}
 		config.Restore = restoreBool
 	}

@@ -15,16 +15,16 @@ import (
 func getMemStorageFileAbsPath(fileName string) (string, error) {
 	dirPath, err := filepath.Abs("./memory_metrics")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("can't get absolute path: %w", err)
 	}
 
 	if _, err = os.Stat(dirPath); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(dirPath, 0o777)
+		err = os.Mkdir(dirPath, 0o750)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("can't create directory %s: %w", dirPath, err)
 		}
 	} else if err != nil {
-		return "", err
+		return "", fmt.Errorf("error in search directory %s: %w", dirPath, err)
 	}
 	return filepath.Join(dirPath, fileName), nil
 }
@@ -36,8 +36,7 @@ func fileDump(fileName string, period time.Duration, storage *types.MemStorage) 
 	}
 	ticker := time.NewTicker(period)
 	defer ticker.Stop()
-	select {
-	case <-ticker.C:
+	for range ticker.C {
 		err := writeMetricStorageFile(storageFilePath, storage)
 		if err != nil {
 			return fmt.Errorf("error in write data in metric storage file: %w", err)
@@ -47,20 +46,20 @@ func fileDump(fileName string, period time.Duration, storage *types.MemStorage) 
 }
 
 func writeMetricStorageFile(absStorageFilePath string, storage *types.MemStorage) (err error) {
-	file, err := os.OpenFile(absStorageFilePath, os.O_WRONLY|os.O_CREATE, 0666)
+	file, err := os.OpenFile(absStorageFilePath, os.O_WRONLY|os.O_CREATE, 0o666)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in open file %s: %w", absStorageFilePath, err)
 	}
 	defer func() {
 		err = file.Close()
 	}()
 	data, err := json.Marshal(*storage)
 	if err != nil {
-		return err
+		return fmt.Errorf("error in marshal data for record in fille: %w", err)
 	}
 	_, err = file.Write(data)
 	if err != nil {
-		return err
+		return fmt.Errorf("error write data in fille %s: %w", absStorageFilePath, err)
 	}
 	return
 }
@@ -75,7 +74,7 @@ func restoreMetricStore(fileName string, storage *types.MemStorage) (err error) 
 		return fmt.Errorf("can't find metrics storage file: %w", err)
 	}
 
-	file, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0o666)
+	file, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0o600)
 	if err != nil {
 		return
 	}
@@ -85,7 +84,7 @@ func restoreMetricStore(fileName string, storage *types.MemStorage) (err error) 
 
 	sc := bufio.NewScanner(file)
 	if !sc.Scan() {
-		return sc.Err()
+		return fmt.Errorf("error scan metric storage file: %w", sc.Err())
 	}
 	data := sc.Bytes()
 

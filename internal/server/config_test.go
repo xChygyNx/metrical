@@ -25,9 +25,9 @@ func TestParseFlags(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			hostPort := parseFlag()
-			assert.Equal(t, hostPort.Host, test.want.host)
-			assert.Equal(t, hostPort.Port, test.want.port)
+			config := parseFlag()
+			assert.Equal(t, config.HostPort.Host, test.want.host)
+			assert.Equal(t, config.HostPort.Port, test.want.port)
 		})
 	}
 }
