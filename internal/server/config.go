@@ -29,14 +29,14 @@ func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
 }
 
-//func (conf *Config) String() string {
-//	return fmt.Sprintf(
-//		"StoreInterval: %d sec\n"+
-//			"FileStoragePath: %s\n"+
-//			"Restore: %t\n"+
-//			"Host: %s:%d",
-//		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port)
-//}
+func (conf *Config) String() string {
+	return fmt.Sprintf(
+		"StoreInterval: %d sec\n"+
+			"FileStoragePath: %s\n"+
+			"Restore: %t\n"+
+			"Host: %s:%d",
+		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port)
+}
 
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
