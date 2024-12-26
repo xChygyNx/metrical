@@ -79,7 +79,7 @@ func restoreMetricStore(fileName string, storage *types.MemStorage) (err error) 
 		return fmt.Errorf("can't find metrics storage file: %w", err)
 	}
 
-	file, err := os.OpenFile(storageFilePath, os.O_RDONLY, 0o600)
+	file, err := os.OpenFile(storageFilePath, os.O_RDONLY, filePem)
 	if err != nil {
 		return
 	}
