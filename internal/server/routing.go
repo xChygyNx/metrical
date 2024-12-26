@@ -80,6 +80,7 @@ func Routing() error {
 		return fmt.Errorf("error in GetConfig: %w", err)
 	}
 
+	go fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
 	err = http.ListenAndServe(config.HostPort.String(), router)
 	if err != nil {
 		return fmt.Errorf("error with launch http server: %w", err)
