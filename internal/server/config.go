@@ -21,7 +21,7 @@ type Config struct {
 	HostPort        HostPort
 }
 
-var STORAGE_FILE string = "metrics.json"
+var StorageFile = "metrics.json"
 
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
@@ -56,7 +56,7 @@ func parseFlag() *Config {
 	config := new(Config)
 	flag.Var(&config.HostPort, "a", "Net address host:port")
 	flag.IntVar(&config.StoreInterval, "i", 300, "Time period for store metrics in the file")
-	flag.StringVar(&config.FileStoragePath, "f", STORAGE_FILE, "File path for store metrics")
+	flag.StringVar(&config.FileStoragePath, "f", StorageFile, "File path for store metrics")
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
@@ -67,20 +67,13 @@ func parseFlag() *Config {
 }
 
 func GetConfig() (*Config, error) {
-	config := new(Config)
-	serverConfig := parseFlag()
+	config := parseFlag()
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")
 	if ok {
 		err := config.HostPort.Set(hostAddr)
 		if err != nil {
 			return nil, err
-		}
-	} else {
-		err := config.HostPort.Set(serverConfig.String())
-		if err != nil {
-			errorMsg := fmt.Sprintf("Addres must be like <host>:<port>, got %s\n", serverConfig.String())
-			return nil, errors.New(errorMsg)
 		}
 	}
 
@@ -91,15 +84,11 @@ func GetConfig() (*Config, error) {
 			return nil, err
 		}
 		config.StoreInterval = interval
-	} else {
-		config.StoreInterval = serverConfig.StoreInterval
 	}
 
 	filePath, ok := os.LookupEnv("FILE_STORAGE_PATH")
 	if ok {
 		config.FileStoragePath = filePath
-	} else {
-		config.FileStoragePath = serverConfig.FileStoragePath
 	}
 
 	restore, ok := os.LookupEnv("RESTORE")
@@ -109,8 +98,6 @@ func GetConfig() (*Config, error) {
 			return nil, err
 		}
 		config.Restore = restoreBool
-	} else {
-		config.Restore = serverConfig.Restore
 	}
 
 	return config, nil
