@@ -99,16 +99,8 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}
 		var metricData types.Metrics
 
-		//requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
 		err = json.Unmarshal(bodyByte, &metricData)
 		log.Println(err, metricData)
-		// err = requestDecoder.Decode(&metricData)
-		// if err != nil && err != io.EOF {
-		// 	errorMsg := "error in decode request body: " + err.Error()
-		// 	log.Println(errorMsg)
-		// 	http.Error(res, errorMsg, http.StatusInternalServerError)
-		// 	return
-		// }
 		log.Println("metric data received: ", metricData)
 		metricName := metricData.ID
 		var responseData types.Metrics
