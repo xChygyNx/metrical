@@ -29,14 +29,14 @@ func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
 }
 
-func (conf *Config) String() string {
-	return fmt.Sprintf(
-		"StoreInterval: %d sec\n"+
-			"FileStoragePath: %s\n"+
-			"Restore: %t\n"+
-			"Host: %s:%d",
-		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port)
-}
+//func (conf *Config) String() string {
+//	return fmt.Sprintf(
+//		"StoreInterval: %d sec\n"+
+//			"FileStoragePath: %s\n"+
+//			"Restore: %t\n"+
+//			"Host: %s:%d",
+//		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port)
+//}
 
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
@@ -56,7 +56,8 @@ func (hp *HostPort) Set(value string) error {
 
 func parseFlag() *Config {
 	config := new(Config)
-	flag.Var(&config.HostPort, "a", "Net address host:port")
+	hostPort := new(HostPort)
+	flag.Var(hostPort, "a", "Net address host:port")
 	defaultStoreInterval := 300
 	flag.IntVar(&config.StoreInterval, "i", defaultStoreInterval, "Time period for store metrics in the file")
 	flag.StringVar(&config.FileStoragePath, "f", StorageFile, "File path for store metrics")

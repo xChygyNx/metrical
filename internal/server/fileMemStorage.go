@@ -12,6 +12,11 @@ import (
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
+const (
+	dirPerm = 0o750
+	filePem = 0o600
+)
+
 func getMemStorageFileAbsPath(fileName string) (string, error) {
 	dirPath, err := filepath.Abs("./memory_metrics")
 	if err != nil {
@@ -19,7 +24,7 @@ func getMemStorageFileAbsPath(fileName string) (string, error) {
 	}
 
 	if _, err = os.Stat(dirPath); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(dirPath, 0o750)
+		err = os.Mkdir(dirPath, dirPerm)
 		if err != nil {
 			return "", fmt.Errorf("can't create directory %s: %w", dirPath, err)
 		}
@@ -46,7 +51,7 @@ func fileDump(fileName string, period time.Duration, storage *types.MemStorage) 
 }
 
 func writeMetricStorageFile(absStorageFilePath string, storage *types.MemStorage) (err error) {
-	file, err := os.OpenFile(absStorageFilePath, os.O_WRONLY|os.O_CREATE, 0o666)
+	file, err := os.OpenFile(absStorageFilePath, os.O_WRONLY|os.O_CREATE, filePem)
 	if err != nil {
 		return fmt.Errorf("error in open file %s: %w", absStorageFilePath, err)
 	}
