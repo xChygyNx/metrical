@@ -73,7 +73,7 @@ func Routing() error {
 		middlewareLogger(GzipHandler(GetJSONMetricHandle(storage)), sugar))
 	router.Post("/value/",
 		middlewareLogger(GzipHandler(GetJSONMetricHandle(storage)), sugar))
-	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
+	router.Get("/", middlewareLogger(GzipHandler(ListMetricHandle(storage)), sugar))
 
 	config, err := GetConfig()
 	if err != nil {

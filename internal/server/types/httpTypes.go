@@ -1,9 +1,11 @@
 package types
 
 import (
+	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -51,19 +53,25 @@ func (gw *gzipWriter) Close() error {
 
 type gzipReader struct {
 	io.ReadCloser
-	Reader *gzip.Reader
+	reader *gzip.Reader
 }
 
 func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
-	gr, err := gzip.NewReader(r)
+	bodyRec, err := io.ReadAll(r)
+	log.Println("body rec: ", string(bodyRec), err)
+	gr, err := gzip.NewReader(bytes.NewBuffer(bodyRec))
 	if err != nil {
 		return nil, fmt.Errorf("error in create gzipReader: %w", err)
 	}
 
 	return &gzipReader{
 		ReadCloser: r,
-		Reader:     gr,
+		reader:     gr,
 	}, nil
+}
+
+func (gr *gzipReader) Read(p []byte) (int, error) {
+	return gr.reader.Read(p)
 }
 
 func (gr *gzipReader) Close() error {
@@ -71,7 +79,7 @@ func (gr *gzipReader) Close() error {
 	if err != nil {
 		return fmt.Errorf("error in close gzipReader: %w", err)
 	}
-	err = gr.Reader.Close()
+	err = gr.reader.Close()
 	if err != nil {
 		err = fmt.Errorf("error in close gzipReader: %w", err)
 	}

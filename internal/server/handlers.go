@@ -84,12 +84,14 @@ func SaveMetricHandleOld(storage *types.MemStorage) http.HandlerFunc {
 
 func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		log.Println("hi from update")
 		res.Header().Set(contentType, jsonContentType)
 
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
 			err = req.Body.Close()
 		}()
+		log.Println(bodyByte)
 		if err != nil {
 			errorMsg := "error in read response body: " + err.Error()
 			http.Error(res, errorMsg, http.StatusInternalServerError)
@@ -97,14 +99,17 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}
 		var metricData types.Metrics
 
-		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
-		err = requestDecoder.Decode(&metricData)
-		if err != nil && err != io.EOF {
-			errorMsg := "error in decode request body: " + err.Error()
-			log.Println(errorMsg)
-			http.Error(res, errorMsg, http.StatusInternalServerError)
-			return
-		}
+		//requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
+		err = json.Unmarshal(bodyByte, &metricData)
+		log.Println(err, metricData)
+		// err = requestDecoder.Decode(&metricData)
+		// if err != nil && err != io.EOF {
+		// 	errorMsg := "error in decode request body: " + err.Error()
+		// 	log.Println(errorMsg)
+		// 	http.Error(res, errorMsg, http.StatusInternalServerError)
+		// 	return
+		// }
+		log.Println("metric data received: ", metricData)
 		metricName := metricData.ID
 		var responseData types.Metrics
 		switch metricData.MType {
@@ -140,6 +145,7 @@ func SaveMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			bodyStr := string(bodyByte)
 			errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
 				"|\n" + bodyStr
+			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
@@ -272,7 +278,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		res.Header().Set(contentType, textContentType)
+		res.Header().Add(contentType, "text/html")
 
 		metricsInfo := map[string]map[string]string{
 			"Gauges":   storage.GetGauges(),
