@@ -56,8 +56,7 @@ func (hp *HostPort) Set(value string) error {
 
 func parseFlag() *Config {
 	config := new(Config)
-	hostPort := new(HostPort)
-	flag.Var(hostPort, "a", "Net address host:port")
+	flag.Var(&config.HostPort, "a", "Net address host:port")
 	defaultStoreInterval := 300
 	flag.IntVar(&config.StoreInterval, "i", defaultStoreInterval, "Time period for store metrics in the file")
 	flag.StringVar(&config.FileStoragePath, "f", StorageFile, "File path for store metrics")
