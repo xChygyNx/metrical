@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	dirPerm = 0o750
 	filePem = 0o600
 )
 
