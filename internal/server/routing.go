@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"time"
 
@@ -67,7 +68,10 @@ func Routing() error {
 
 	if config.Restore {
 		err = restoreMetricStore(config.FileStoragePath, storage)
-		if err != nil {
+		var storageFileNotFound *fs.PathError
+		if errors.As(err, &storageFileNotFound) {
+
+		} else if err != nil {
 			return fmt.Errorf("error with restore MemStorage from file: %w", err)
 		}
 	}
