@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -13,12 +12,12 @@ import (
 )
 
 const (
-	GAUGE           = "gauge"
-	COUNTER         = "counter"
-	InternalError   = "Internal error"
-	jsonContentType = "application/json"
-	textContentType = "text/plain"
-	contentType     = "Content-type"
+	GAUGE                  = "gauge"
+	COUNTER                = "counter"
+	internalServerErrorMsg = "Internal server error"
+	jsonContentType        = "application/json"
+	textContentType        = "text/plain"
+	contentType            = "Content-type"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -74,15 +73,17 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) htt
 		if syncInfo.SyncFileRecord {
 			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
 			errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
-			http.Error(res, errorMsg, http.StatusBadRequest)
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte("OK"))
 		if err != nil {
-			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
-			http.Error(res, InternalError, http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("Error of write data in http.ResponseWriter: %v\n", err)
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -98,13 +99,13 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 		}()
 		if err != nil {
 			errorMsg := "error in read response body: " + err.Error()
-			http.Error(res, errorMsg, http.StatusInternalServerError)
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 		var metricData types.Metrics
 
 		err = json.Unmarshal(bodyByte, &metricData)
-		log.Println("metric data received: ", metricData)
 		metricName := metricData.ID
 		var responseData types.Metrics
 		switch metricData.MType {
@@ -113,8 +114,8 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 			value, ok := storage.GetGauge(metricData.ID)
 			if !ok {
 				errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
-				log.Println(errorMsg)
-				http.Error(res, errorMsg, http.StatusInternalServerError)
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
 			responseData = types.Metrics{
@@ -127,8 +128,8 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 			value, ok := storage.GetCounter(metricData.ID)
 			if !ok {
 				errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
-				log.Println(errorMsg)
-				http.Error(res, errorMsg, http.StatusInternalServerError)
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
 			responseData = types.Metrics{
@@ -140,7 +141,6 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 			bodyStr := string(bodyByte)
 			errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
 				"|\n" + bodyStr
-			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
@@ -154,17 +154,18 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 
 		encodedResponseData, err := json.Marshal(responseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
-			log.Println(errorMsg)
-			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
-			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
-			http.Error(res, InternalError, http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("Error of write data in http.ResponseWriter: %v\n", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -203,15 +204,17 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		case int64:
 			_, err := res.Write([]byte(strconv.FormatInt(metricValue, 10)))
 			if err != nil {
-				log.Printf("Error in format integer from receive data: %v\n", err)
-				http.Error(res, InternalError, http.StatusInternalServerError)
+				errorMsg := fmt.Errorf("Error in format integer from receive data: %w\n", err).Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
 		case float64:
 			_, err := res.Write([]byte(strconv.FormatFloat(metricValue, 'f', -1, 64)))
 			if err != nil {
-				log.Printf("Error in format float from receive data: %v\n", err)
-				http.Error(res, InternalError, http.StatusInternalServerError)
+				errorMsg := fmt.Errorf("Error in format float from receive data: %w\n", err).Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
 		}
@@ -228,8 +231,9 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			err = req.Body.Close()
 		}()
 		if err != nil {
-			errorMsg := "error in read response body: " + err.Error()
-			http.Error(res, errorMsg, http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("error in read response body: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 		var reqJSON types.Metrics
@@ -237,9 +241,9 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
 		err = requestDecoder.Decode(&reqJSON)
 		if err != nil {
-			errorMsg := "error in  decode response body: " + err.Error()
-			log.Println(errorMsg)
-			http.Error(res, errorMsg, http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("error in  decode response body: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 		mType := reqJSON.MType
@@ -263,17 +267,17 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}
 		responseData, err := json.Marshal(reqJSON)
 		if err != nil {
-			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err)
-			log.Println(errorMsg)
-			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(responseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("error in write body of response: %w", err)
-			log.Println(errorMsg)
-			http.Error(res, errorMsg.Error(), http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("error in write body of response: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -289,16 +293,18 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}
 		metricInfoStr, err := json.Marshal(metricsInfo)
 		if err != nil {
-			log.Printf("Error in serialize of metrics storage: %v\n", err)
-			http.Error(res, InternalError, http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("Error in serialize of metrics storage: %w\n", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(metricInfoStr)
 		if err != nil {
-			log.Printf("Error of write data in http.ResponseWriter: %v\n", err)
-			http.Error(res, InternalError, http.StatusInternalServerError)
+			errorMsg := fmt.Errorf("Error of write data in http.ResponseWriter: %w\n", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 	}
@@ -318,8 +324,9 @@ func GzipHandler(internal http.Handler) http.Handler {
 			defer func() {
 				err := gzipReader.Close()
 				if err != nil {
-					errorMsg := fmt.Errorf("error in close gzipReader: %w", err)
-					http.Error(w, errorMsg.Error(), http.StatusInternalServerError)
+					errorMsg := fmt.Errorf("error in close gzipReader: %w", err).Error()
+					fmt.Println(errorMsg)
+					http.Error(w, internalServerErrorMsg, http.StatusInternalServerError)
 					return
 				}
 			}()

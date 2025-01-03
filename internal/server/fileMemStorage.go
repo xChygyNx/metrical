@@ -49,10 +49,6 @@ func writeMetricStorageFile(absStorageFilePath string, storage *types.MemStorage
 }
 
 func restoreMetricStore(fileName string, storage *types.MemStorage) (err error) {
-	if _, err = os.Stat(fileName); err != nil {
-		return fmt.Errorf("can't find metrics storage file: %w", err)
-	}
-
 	file, err := os.OpenFile(fileName, os.O_RDONLY, filePem)
 	if err != nil {
 		return

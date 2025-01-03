@@ -17,7 +17,7 @@ func compress(data []byte) (res []byte, err error) {
 
 	err = gzipWriter.Close()
 	if err != nil {
-		err = fmt.Errorf("error in gzip compress data: %w", err)
+		return nil, fmt.Errorf("error in close gzipWriter: %w", err)
 	}
 
 	res = buf.Bytes()
