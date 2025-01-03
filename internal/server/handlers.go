@@ -81,7 +81,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) htt
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte("OK"))
 		if err != nil {
-			errorMsg := fmt.Errorf("Error of write data in http.ResponseWriter: %v\n", err)
+			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -163,7 +163,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("Error of write data in http.ResponseWriter: %v\n", err).Error()
+			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -204,7 +204,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		case int64:
 			_, err := res.Write([]byte(strconv.FormatInt(metricValue, 10)))
 			if err != nil {
-				errorMsg := fmt.Errorf("Error in format integer from receive data: %w\n", err).Error()
+				errorMsg := fmt.Errorf("error in format integer from receive data: %w", err).Error()
 				fmt.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
@@ -212,7 +212,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		case float64:
 			_, err := res.Write([]byte(strconv.FormatFloat(metricValue, 'f', -1, 64)))
 			if err != nil {
-				errorMsg := fmt.Errorf("Error in format float from receive data: %w\n", err).Error()
+				errorMsg := fmt.Errorf("error in format float from receive data: %w", err).Error()
 				fmt.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
@@ -293,7 +293,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}
 		metricInfoStr, err := json.Marshal(metricsInfo)
 		if err != nil {
-			errorMsg := fmt.Errorf("Error in serialize of metrics storage: %w\n", err).Error()
+			errorMsg := fmt.Errorf("error in serialize of metrics storage: %w", err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -302,7 +302,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(metricInfoStr)
 		if err != nil {
-			errorMsg := fmt.Errorf("Error of write data in http.ResponseWriter: %w\n", err).Error()
+			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
