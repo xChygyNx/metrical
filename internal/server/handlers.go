@@ -90,14 +90,12 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) htt
 
 func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
-		log.Println("hi from update")
 		res.Header().Set(contentType, jsonContentType)
 
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
 			err = req.Body.Close()
 		}()
-		log.Println(bodyByte)
 		if err != nil {
 			errorMsg := "error in read response body: " + err.Error()
 			http.Error(res, errorMsg, http.StatusInternalServerError)
@@ -106,7 +104,6 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 		var metricData types.Metrics
 
 		err = json.Unmarshal(bodyByte, &metricData)
-		log.Println(err, metricData)
 		log.Println("metric data received: ", metricData)
 		metricName := metricData.ID
 		var responseData types.Metrics

@@ -14,25 +14,7 @@ const (
 	filePem = 0o600
 )
 
-//func getMemStorageFileAbsPath(fileName string) (string, error) {
-//	dirPath, err := filepath.Abs("./memory_metrics")
-//	if err != nil {
-//		return "", fmt.Errorf("can't get absolute path: %w", err)
-//	}
-//
-//	if _, err = os.Stat(dirPath); errors.Is(err, os.ErrNotExist) {
-//		err = os.Mkdir(dirPath, dirPerm)
-//		if err != nil {
-//			return "", fmt.Errorf("can't create directory %s: %w", dirPath, err)
-//		}
-//	} else if err != nil {
-//		return "", fmt.Errorf("error in search directory %s: %w", dirPath, err)
-//	}
-//	return filepath.Join(dirPath, fileName), nil
-//}
-
 func fileDump(fileName string, period time.Duration, storage *types.MemStorage) (err error) {
-	//storageFilePath, err := getMemStorageFileAbsPath(fileName)
 	if err != nil {
 		return
 	}
@@ -67,11 +49,6 @@ func writeMetricStorageFile(absStorageFilePath string, storage *types.MemStorage
 }
 
 func restoreMetricStore(fileName string, storage *types.MemStorage) (err error) {
-	//storageFilePath, err := getMemStorageFileAbsPath(fileName)
-	//if err != nil {
-	//	return
-	//}
-
 	if _, err = os.Stat(fileName); err != nil {
 		return fmt.Errorf("can't find metrics storage file: %w", err)
 	}
