@@ -13,8 +13,6 @@ import (
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
-var sugar zap.SugaredLogger
-
 func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -58,7 +56,7 @@ func Routing() error {
 			return
 		}
 	}()
-	sugar = *logger.Sugar()
+	sugar := *logger.Sugar()
 	storage := types.GetMemStorage()
 
 	config, err := GetConfig()
@@ -84,19 +82,20 @@ func Routing() error {
 	}
 
 	router := chi.NewRouter()
+	router.Use(GzipHandler)
 	router.Post("/update",
-		middlewareLogger(GzipHandler(SaveMetricHandle(storage, syncInfo)), sugar))
+		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/",
-		middlewareLogger(GzipHandler(SaveMetricHandle(storage, syncInfo)), sugar))
+		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/{mType}/{metric}/{value}",
-		middlewareLogger(GzipHandler(SaveMetricHandleOld(storage, syncInfo)), sugar))
+		middlewareLogger(SaveMetricHandleOld(storage, syncInfo), sugar))
 	router.Get("/value/{mType}/{metric}",
-		middlewareLogger(GzipHandler(GetMetricHandle(storage)), sugar))
+		middlewareLogger(GetMetricHandle(storage), sugar))
 	router.Post("/value",
-		middlewareLogger(GzipHandler(GetJSONMetricHandle(storage)), sugar))
+		middlewareLogger(GetJSONMetricHandle(storage), sugar))
 	router.Post("/value/",
-		middlewareLogger(GzipHandler(GetJSONMetricHandle(storage)), sugar))
-	router.Get("/", middlewareLogger(GzipHandler(ListMetricHandle(storage)), sugar))
+		middlewareLogger(GetJSONMetricHandle(storage), sugar))
+	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 
 	err = http.ListenAndServe(config.HostPort.String(), router)
 	if err != nil {
