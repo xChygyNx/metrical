@@ -18,10 +18,10 @@ type HostPort struct {
 
 type Config struct {
 	FileStoragePath string
+	DBAddress       string
 	HostPort        HostPort
 	StoreInterval   int
 	Restore         bool
-	DBAddress       string
 }
 
 const (
