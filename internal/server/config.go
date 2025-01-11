@@ -21,9 +21,13 @@ type Config struct {
 	HostPort        HostPort
 	StoreInterval   int
 	Restore         bool
+	DBAddress       string
 }
 
-var StorageFile = "metrics.json"
+const (
+	StorageFile = "metrics.json"
+	DBAddress   = "host=localhost user=admin password=superPa$$worD dbname=video sslmode=disable"
+)
 
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
@@ -34,8 +38,9 @@ func (conf *Config) String() string {
 		"StoreInterval: %d sec\n"+
 			"FileStoragePath: %s\n"+
 			"Restore: %t\n"+
-			"Host: %s:%d",
-		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port)
+			"Host: %s:%d\n"+
+			"DBAddress:%s",
+		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port, conf.DBAddress)
 }
 
 func (hp *HostPort) Set(value string) error {
@@ -61,6 +66,7 @@ func parseFlag() *Config {
 	flag.IntVar(&config.StoreInterval, "i", defaultStoreInterval, "Time period for store metrics in the file")
 	flag.StringVar(&config.FileStoragePath, "f", StorageFile, "File path for store metrics")
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
+	flag.StringVar(&config.DBAddress, "d", DBAddress, "Address of connecting to Data Base")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
@@ -103,6 +109,11 @@ func GetConfig() (*Config, error) {
 				"environment variable RESTORE must be bool, got %s: %w", restore, err)
 		}
 		config.Restore = restoreBool
+	}
+
+	dBAddress, ok := os.LookupEnv("DATABASE_DSN")
+	if ok {
+		config.DBAddress = dBAddress
 	}
 
 	return config, nil
