@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -61,6 +62,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+
 		defer func() {
 			err := db.Close()
 			if err != nil {
@@ -70,6 +72,16 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 				return
 			}
 		}()
+
+		ctx := context.Background()
+		err = db.PingContext(ctx)
+		if err != nil {
+			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+
 		res.WriteHeader(http.StatusOK)
 	}
 }
