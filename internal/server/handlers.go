@@ -59,6 +59,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
 		}
 		defer func() {
 			err := db.Close()
@@ -66,6 +67,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 				errorMsg := fmt.Errorf("can't close connection with DB videos: %w", err)
 				fmt.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
 			}
 		}()
 		res.WriteHeader(http.StatusOK)
