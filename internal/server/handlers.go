@@ -2,12 +2,15 @@ package server
 
 import (
 	"bytes"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"strconv"
 
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
@@ -50,6 +53,39 @@ func saveMetricValue(mType, mName, value string, storage *types.MemStorage) (err
 	return
 }
 
+func pingDBHandle(dBAddress string) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		db, err := sql.Open("pgx", dBAddress)
+		if err != nil {
+			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+
+		defer func() {
+			err := db.Close()
+			if err != nil {
+				errorMsg := fmt.Errorf("can't close connection with DB videos: %w", err)
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}()
+
+		ctx := context.Background()
+		err = db.PingContext(ctx)
+		if err != nil {
+			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+
+		res.WriteHeader(http.StatusOK)
+	}
+}
+
 func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
@@ -72,10 +108,12 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) htt
 		}
 		if syncInfo.SyncFileRecord {
 			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
-			errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
-			fmt.Println(errorMsg)
-			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
-			return
+			if err != nil {
+				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -147,9 +185,11 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 
 		if syncInfo.SyncFileRecord {
 			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
-			errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
-			http.Error(res, errorMsg, http.StatusBadRequest)
-			return
+			if err != nil {
+				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+				http.Error(res, errorMsg, http.StatusBadRequest)
+				return
+			}
 		}
 
 		encodedResponseData, err := json.Marshal(responseData)

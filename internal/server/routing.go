@@ -95,6 +95,7 @@ func Routing() error {
 		middlewareLogger(GetJSONMetricHandle(storage), sugar))
 	router.Post("/value/",
 		middlewareLogger(GetJSONMetricHandle(storage), sugar))
+	router.Get("/ping", middlewareLogger(pingDBHandle(config.DBAddress), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 
 	err = http.ListenAndServe(config.HostPort.String(), router)
