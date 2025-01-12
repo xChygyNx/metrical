@@ -44,7 +44,7 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 	return logFn
 }
 
-func Routing() error {
+func Routing() (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -80,7 +80,9 @@ func Routing() error {
 	}
 
 	if syncInfo.DB != nil {
-		defer syncInfo.DB.Close()
+		defer func() {
+			err = syncInfo.DB.Close()
+		}()
 	}
 
 	if syncInfo.DB == nil && !syncInfo.SyncFileRecord {

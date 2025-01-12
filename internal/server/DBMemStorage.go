@@ -15,7 +15,7 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) error {
 			"SET value = $1"+
 			"WHERE metric_name = $2", v, k)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in update data in gauges table: %w", err)
 		}
 	}
 	for k, v := range storage.GetCounters() {
@@ -23,7 +23,7 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) error {
 			"SET value = $1"+
 			"WHERE metric_name = $2", v, k)
 		if err != nil {
-			return err
+			return fmt.Errorf("error in update data in counters table: %w", err)
 		}
 	}
 	return nil

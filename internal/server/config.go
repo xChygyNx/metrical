@@ -37,10 +37,10 @@ type Config struct {
 	Restore         bool
 }
 
-//const (
+// const (
 //	StorageFile = "metrics.json"
 //	DBAddress   = "host=localhost user=admin password=superPa$$worD dbname=video sslmode=disable"
-//)
+// )
 
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
@@ -135,17 +135,17 @@ func GetConfig() (*Config, error) {
 func createMetricDB(connectInfo string) (*sql.DB, error) {
 	db, err := sql.Open("pgx", connectInfo)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in create Metric DB: %w", err)
 	}
 
 	ctx := context.Background()
 	_, err = db.ExecContext(ctx, sqlCreateGaugeTableCmd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in create gauges table: %w", err)
 	}
 	_, err = db.ExecContext(ctx, sqlCreateCounterTableCmd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error in create counters table: %w", err)
 	}
 
 	return db, nil
@@ -157,7 +157,7 @@ func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
 	if conf.DBAddress != "" {
 		db, err = createMetricDB(conf.DBAddress)
 		if err != nil {
-			return nil, fmt.Errorf("error in create Metric Data Base: %w", err)
+			db = nil
 		}
 	}
 	return &types.SyncInfo{

@@ -25,7 +25,7 @@ type SyncInfo struct {
 
 func (s *SyncInfo) CheckBDConnection() error {
 	err := s.DB.PingContext(context.Background())
-	return err
+	return fmt.Errorf("DB is unreachable: %w", err)
 }
 
 func GetMemStorage() *MemStorage {
