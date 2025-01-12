@@ -14,15 +14,16 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) error {
 	for k, v := range storage.GetGauges() {
 		_, err := db.ExecContext(ctx, "UPDATE gauges"+
 			"SET value = $1"+
-			"WHERE metric_name = $2", v, k)
+			"WHERE metric_name = $2;", v, k)
 		if err != nil {
 			return fmt.Errorf("error in update data in gauges table: %w", err)
 		}
 	}
 	for k, v := range storage.GetCounters() {
+		fmt.Printf("K = %s, V = %s\n", k, v)
 		_, err := db.ExecContext(ctx, "UPDATE counters"+
 			"SET value = $1"+
-			"WHERE metric_name = $2", v, k)
+			"WHERE metric_name = $2;", v, k)
 		if err != nil {
 			return fmt.Errorf("error in update data in counters table: %w", err)
 		}
