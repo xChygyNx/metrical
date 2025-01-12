@@ -74,8 +74,16 @@ func Routing() error {
 		}
 	}
 
-	syncInfo := GetSyncInfo(*config)
-	if !syncInfo.SyncFileRecord {
+	syncInfo, err := GetSyncInfo(*config)
+	if err != nil {
+		return fmt.Errorf("error in GetSyncInfo: %w", err)
+	}
+
+	if syncInfo.DB != nil {
+		defer syncInfo.DB.Close()
+	}
+
+	if syncInfo.DB == nil && !syncInfo.SyncFileRecord {
 		go func() {
 			err = fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
 		}()

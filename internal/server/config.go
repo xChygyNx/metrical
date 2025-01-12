@@ -1,6 +1,8 @@
 package server
 
 import (
+	"context"
+	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
@@ -9,6 +11,17 @@ import (
 	"strings"
 
 	"github.com/xChygyNx/metrical/internal/server/types"
+)
+
+const (
+	sqlCreateGaugeTableCmd = "CREATE TABLE IF NOT EXISTS gauges (" +
+		"	metric_name		varchar(100) PRIMARY KEY," +
+		"	value			double precision," +
+		");"
+	sqlCreateCounterTableCmd = "CREATE TABLE IF NOT EXISTS counters (" +
+		"	metric_name		varchar(100) PRIMARY KEY," +
+		"	value			integer," +
+		");"
 )
 
 type HostPort struct {
@@ -24,10 +37,10 @@ type Config struct {
 	Restore         bool
 }
 
-const (
-	StorageFile = "metrics.json"
-	DBAddress   = "host=localhost user=admin password=superPa$$worD dbname=video sslmode=disable"
-)
+//const (
+//	StorageFile = "metrics.json"
+//	DBAddress   = "host=localhost user=admin password=superPa$$worD dbname=video sslmode=disable"
+//)
 
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
@@ -64,9 +77,9 @@ func parseFlag() *Config {
 	flag.Var(&config.HostPort, "a", "Net address host:port")
 	defaultStoreInterval := 300
 	flag.IntVar(&config.StoreInterval, "i", defaultStoreInterval, "Time period for store metrics in the file")
-	flag.StringVar(&config.FileStoragePath, "f", StorageFile, "File path for store metrics")
+	flag.StringVar(&config.FileStoragePath, "f", "", "File path for store metrics")
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
-	flag.StringVar(&config.DBAddress, "d", DBAddress, "Address of connecting to Data Base")
+	flag.StringVar(&config.DBAddress, "d", "", "Address of connecting to Data Base")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
@@ -119,9 +132,37 @@ func GetConfig() (*Config, error) {
 	return config, nil
 }
 
-func GetSyncInfo(conf Config) types.SyncInfo {
-	return types.SyncInfo{
+func createMetricDB(connectInfo string) (*sql.DB, error) {
+	db, err := sql.Open("pgx", connectInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	ctx := context.Background()
+	_, err = db.ExecContext(ctx, sqlCreateGaugeTableCmd)
+	if err != nil {
+		return nil, err
+	}
+	_, err = db.ExecContext(ctx, sqlCreateCounterTableCmd)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
+	var db *sql.DB
+	var err error
+	if conf.DBAddress != "" {
+		db, err = createMetricDB(conf.DBAddress)
+		if err != nil {
+			return nil, fmt.Errorf("error in create Metric Data Base: %w", err)
+		}
+	}
+	return &types.SyncInfo{
+		DB:                db,
 		FileMetricStorage: conf.FileStoragePath,
 		SyncFileRecord:    conf.StoreInterval == 0,
-	}
+	}, nil
 }

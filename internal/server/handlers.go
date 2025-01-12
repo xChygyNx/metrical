@@ -86,7 +86,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 	}
 }
 
-func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) http.HandlerFunc {
+func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
 
@@ -127,7 +127,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo types.SyncInfo) htt
 	}
 }
 
-func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.HandlerFunc {
+func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 
@@ -183,7 +183,15 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo types.SyncInfo) http.H
 			return
 		}
 
-		if syncInfo.SyncFileRecord {
+		if syncInfo.DB != nil {
+			err = writeMetricStorageDB(syncInfo.DB, storage)
+			if err != nil {
+				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		} else if syncInfo.SyncFileRecord {
 			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()

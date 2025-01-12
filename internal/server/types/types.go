@@ -1,6 +1,8 @@
 package types
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -16,8 +18,14 @@ type MemStorage struct {
 }
 
 type SyncInfo struct {
+	DB                *sql.DB
 	FileMetricStorage string
 	SyncFileRecord    bool
+}
+
+func (s *SyncInfo) CheckBDConnection() error {
+	err := s.DB.PingContext(context.Background())
+	return err
 }
 
 func GetMemStorage() *MemStorage {
