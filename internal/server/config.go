@@ -16,11 +16,11 @@ import (
 const (
 	sqlCreateGaugeTableCmd = "CREATE TABLE IF NOT EXISTS gauges (" +
 		"	metric_name		varchar(100) PRIMARY KEY," +
-		"	value			double precision," +
+		"	value			double precision" +
 		");"
 	sqlCreateCounterTableCmd = "CREATE TABLE IF NOT EXISTS counters (" +
 		"	metric_name		varchar(100) PRIMARY KEY," +
-		"	value			integer," +
+		"	value			integer" +
 		");"
 )
 
@@ -36,11 +36,6 @@ type Config struct {
 	StoreInterval   int
 	Restore         bool
 }
-
-// const (
-//	StorageFile = "metrics.json"
-//	DBAddress   = "host=localhost user=admin password=superPa$$worD dbname=video sslmode=disable"
-// )
 
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
@@ -157,7 +152,7 @@ func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
 	if conf.DBAddress != "" {
 		db, err = createMetricDB(conf.DBAddress)
 		if err != nil {
-			db = nil
+			return nil, fmt.Errorf("error in create Metric Data Base: %w", err)
 		}
 	}
 	return &types.SyncInfo{
