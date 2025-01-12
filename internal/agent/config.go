@@ -14,7 +14,7 @@ type config struct {
 }
 
 func GetConfig() (*config, error) {
-	config := new(config)
+	config := &config{}
 	agentConfig := parseFlag()
 	pollInterval, ok := os.LookupEnv("POLL_INTERVAL")
 	if ok {

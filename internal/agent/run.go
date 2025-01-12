@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
@@ -28,6 +27,7 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	result["MCacheInuse"] = float64(stats.MCacheInuse)
 	result["MCacheSys"] = float64(stats.MCacheSys)
 	result["MSpanInuse"] = float64(stats.MSpanInuse)
+	result["MSpanSys"] = float64(stats.MSpanSys)
 	result["Mallocs"] = float64(stats.Mallocs)
 	result["NextGC"] = float64(stats.NextGC)
 	result["NumForcedGC"] = float64(stats.NumForcedGC)
@@ -59,11 +59,7 @@ func Run() error {
 			runtime.ReadMemStats(&memStats)
 			pollCount++
 		case <-reportTicker.C:
-			sendInfo, err := json.Marshal(prepareStatsForSend(&memStats))
-			if err != nil {
-				log.Println(err)
-				continue
-			}
+			sendInfo := prepareStatsForSend(&memStats)
 			client := &http.Client{}
 
 			err = SendGauge(client, sendInfo, config.HostAddr)
