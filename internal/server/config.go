@@ -133,6 +133,11 @@ func createMetricDB(connectInfo string) (*sql.DB, error) {
 		return nil, fmt.Errorf("error in create Metric DB: %w", err)
 	}
 
+	err = db.PingContext(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("DB is unreachable: %w", err)
+	}
+
 	ctx := context.Background()
 	_, err = db.ExecContext(ctx, sqlCreateGaugeTableCmd)
 	if err != nil {
