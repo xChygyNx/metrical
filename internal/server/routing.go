@@ -97,6 +97,10 @@ func Routing() (err error) {
 		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/",
 		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
+	router.Post("/updates",
+		middlewareLogger(SaveBatchMetricHandle(storage, syncInfo), sugar))
+	router.Post("/updates/",
+		middlewareLogger(SaveBatchMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/{mType}/{metric}/{value}",
 		middlewareLogger(SaveMetricHandleOld(storage, syncInfo), sugar))
 	router.Get("/value/{mType}/{metric}",

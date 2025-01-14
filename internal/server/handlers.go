@@ -6,12 +6,11 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/xChygyNx/metrical/internal/server/types"
 	"io"
 	"net/http"
 	"strconv"
-
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (
@@ -21,6 +20,7 @@ const (
 	jsonContentType        = "application/json"
 	textContentType        = "text/plain"
 	contentType            = "Content-type"
+	countGaugeMetrics      = 28
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -201,6 +201,104 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 		}
 
 		encodedResponseData, err := json.Marshal(responseData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+
+		res.WriteHeader(http.StatusOK)
+		_, err = res.Write(encodedResponseData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+	}
+}
+
+func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+	return func(res http.ResponseWriter, req *http.Request) {
+		res.Header().Set(contentType, jsonContentType)
+
+		bodyByte, err := io.ReadAll(req.Body)
+		defer func() {
+			err = req.Body.Close()
+		}()
+		if err != nil {
+			errorMsg := "error in read response body: " + err.Error()
+			fmt.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
+		response := make([]types.Metrics, 0, countGaugeMetrics)
+
+		err = json.Unmarshal(bodyByte, &metricsData)
+		fmt.Printf("Unmarshalling metricsData: %s\n", metricsData)
+
+		for _, metricData := range metricsData {
+			metricName := metricData.ID
+			var responseData types.Metrics
+			switch metricData.MType {
+			case GAUGE:
+				storage.SetGauge(metricName, *metricData.Value)
+				value, ok := storage.GetGauge(metricData.ID)
+				if !ok {
+					errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
+					fmt.Println(errorMsg)
+					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+					return
+				}
+				responseData = types.Metrics{
+					ID:    metricData.ID,
+					MType: metricData.MType,
+					Value: &value,
+				}
+			case COUNTER:
+				storage.SetCounter(metricName, *metricData.Delta)
+				value, ok := storage.GetCounter(metricData.ID)
+				if !ok {
+					errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
+					fmt.Println(errorMsg)
+					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+					return
+				}
+				responseData = types.Metrics{
+					ID:    metricData.ID,
+					MType: metricData.MType,
+					Delta: &value,
+				}
+			default:
+				bodyStr := string(bodyByte)
+				errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
+					"|\n" + bodyStr
+				http.Error(res, errorMsg, http.StatusBadRequest)
+				return
+			}
+			response = append(response, responseData)
+		}
+
+		if syncInfo.DB != nil {
+			err = writeMetricStorageDB(syncInfo.DB, storage)
+			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
+				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		} else if syncInfo.SyncFileRecord {
+			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
+			if err != nil {
+				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+				http.Error(res, errorMsg, http.StatusBadRequest)
+				return
+			}
+		}
+
+		encodedResponseData, err := json.Marshal(response)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
 			fmt.Println(errorMsg)

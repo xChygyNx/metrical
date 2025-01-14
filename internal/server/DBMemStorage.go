@@ -31,8 +31,16 @@ func isMetricInDB(db *sql.DB, table string, metricName string) (bool, error) {
 	return records.Next(), nil
 }
 
-func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) error {
+func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 	ctx := context.Background()
+	tx, err := db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("error in create transaction for DB: %w", err)
+	}
+	defer func() {
+		err = tx.Rollback()
+	}()
+
 	for k, v := range storage.GetGauges() {
 		val, err := strconv.ParseFloat(v, 64)
 		if err != nil {
@@ -43,14 +51,14 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) error {
 			return fmt.Errorf("error in search gauge metric %s in DB: %w", k, err)
 		}
 		if metricExist {
-			_, err = db.ExecContext(ctx, "UPDATE gauges "+
+			_, err = tx.ExecContext(ctx, "UPDATE gauges "+
 				"SET value = value  +$1 "+
 				"WHERE metric_name = $2;", val, k)
 			if err != nil {
 				return fmt.Errorf("error in update data in gauges table: %w", err)
 			}
 		} else {
-			_, err = db.ExecContext(ctx, "INSERT INTO gauges(metric_name, value) "+
+			_, err = tx.ExecContext(ctx, "INSERT INTO gauges(metric_name, value) "+
 				"VALUES ($1, $2)", k, val)
 			if err != nil {
 				return fmt.Errorf("error in update data in gauges table: %w", err)
@@ -68,19 +76,20 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) error {
 			return fmt.Errorf("error in search counter metric %s in DB: %w", k, err)
 		}
 		if metricExist {
-			_, err = db.ExecContext(ctx, "UPDATE counters "+
+			_, err = tx.ExecContext(ctx, "UPDATE counters "+
 				"SET value = value  +$1 "+
 				"WHERE metric_name = $2;", diff, k)
 			if err != nil {
 				return fmt.Errorf("error in update data in counters table: %w", err)
 			}
 		} else {
-			_, err = db.ExecContext(ctx, "INSERT INTO counters(metric_name, value) "+
+			_, err = tx.ExecContext(ctx, "INSERT INTO counters(metric_name, value) "+
 				"VALUES ($1, $2)", k, diff)
 			if err != nil {
 				return fmt.Errorf("error in update data in counters table: %w", err)
 			}
 		}
 	}
-	return nil
+
+	return tx.Commit()
 }
