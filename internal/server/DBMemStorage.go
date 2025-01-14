@@ -90,6 +90,9 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 			}
 		}
 	}
-
-	return tx.Commit()
+	err = tx.Commit()
+	if err != nil {
+		return fmt.Errorf("error in commit transaction to DB: %w", err)
+	}
+	return nil
 }

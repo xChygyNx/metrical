@@ -21,6 +21,7 @@ const (
 	textContentType        = "text/plain"
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
+	writeHandlerErrorMsg   = "error of write data in http.ResponseWriter:"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -119,7 +120,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte("OK"))
 		if err != nil {
-			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
+			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -211,7 +212,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
+			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -234,42 +235,30 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 			return
 		}
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
-		response := make([]types.Metrics, 0, countGaugeMetrics)
 
 		err = json.Unmarshal(bodyByte, &metricsData)
-		fmt.Printf("Unmarshalling metricsData: %s\n", metricsData)
+		fmt.Printf("Unmarshalling metricsData: %v\n", metricsData)
 
 		for _, metricData := range metricsData {
 			metricName := metricData.ID
-			var responseData types.Metrics
 			switch metricData.MType {
 			case GAUGE:
 				storage.SetGauge(metricName, *metricData.Value)
-				value, ok := storage.GetGauge(metricData.ID)
+				_, ok := storage.GetGauge(metricData.ID)
 				if !ok {
 					errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
 					fmt.Println(errorMsg)
 					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 					return
 				}
-				responseData = types.Metrics{
-					ID:    metricData.ID,
-					MType: metricData.MType,
-					Value: &value,
-				}
 			case COUNTER:
 				storage.SetCounter(metricName, *metricData.Delta)
-				value, ok := storage.GetCounter(metricData.ID)
+				_, ok := storage.GetCounter(metricData.ID)
 				if !ok {
 					errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
 					fmt.Println(errorMsg)
 					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 					return
-				}
-				responseData = types.Metrics{
-					ID:    metricData.ID,
-					MType: metricData.MType,
-					Delta: &value,
 				}
 			default:
 				bodyStr := string(bodyByte)
@@ -278,7 +267,6 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 				http.Error(res, errorMsg, http.StatusBadRequest)
 				return
 			}
-			response = append(response, responseData)
 		}
 
 		if syncInfo.DB != nil {
@@ -298,7 +286,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 			}
 		}
 
-		encodedResponseData, err := json.Marshal(response)
+		encodedResponseData, err := json.Marshal(metricsData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
 			fmt.Println(errorMsg)
@@ -309,7 +297,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
+			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -448,7 +436,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(metricInfoStr)
 		if err != nil {
-			errorMsg := fmt.Errorf("error of write data in http.ResponseWriter: %w", err).Error()
+			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
