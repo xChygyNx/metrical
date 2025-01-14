@@ -13,8 +13,14 @@ import (
 )
 
 const (
-	contentType   = "application/json"
-	contentEncode = "gzip"
+	countGaugeMetrics    = 28
+	contentType          = "Content-Type"
+	contentTypeValue     = "application/json"
+	contentEncoding      = "Content-Encoding"
+	contentEncodingValue = "gzip"
+	responseStatusMsg    = "response Status: "
+	responseHeadersMsg   = "response Headers: "
+	responseBodyMsg      = "response Body: "
 )
 
 func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
@@ -40,8 +46,8 @@ func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPo
 		if err != nil {
 			return fmt.Errorf("failed to create http Request: %w", err)
 		}
-		req.Header.Set("Content-Type", contentType)
-		req.Header.Set("Content-Encoding", contentEncode)
+		req.Header.Set(contentType, contentTypeValue)
+		req.Header.Set(contentEncoding, contentEncodingValue)
 		resp, err := client.Do(req)
 		if err != nil {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -50,13 +56,13 @@ func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPo
 			err = resp.Body.Close()
 		}()
 
-		log.Println("response Status:", resp.Status)
-		log.Println("response Headers:", resp.Header)
+		log.Println(responseStatusMsg, resp.Status)
+		log.Println(responseHeadersMsg, resp.Header)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("error in read response body: %w", err)
 		}
-		log.Println("response Body:", string(body))
+		log.Println(responseBodyMsg, string(body))
 		err = resp.Body.Close()
 		if err != nil {
 			_, err = io.Copy(os.Stdout, bytes.NewReader([]byte(err.Error())))
@@ -95,8 +101,8 @@ func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err err
 	if err != nil {
 		return
 	}
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Set("Content-Encoding", contentEncode)
+	req.Header.Set(contentType, contentTypeValue)
+	req.Header.Set(contentEncoding, contentEncodingValue)
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -105,18 +111,18 @@ func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err err
 		err = resp.Body.Close()
 	}()
 
-	log.Println("response Status:", resp.Status)
-	log.Println("response Headers:", resp.Header)
+	log.Println(responseStatusMsg, resp.Status)
+	log.Println(responseHeadersMsg, resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
-	log.Println("response Body:", string(body))
+	log.Println(responseBodyMsg, string(body))
 	return
 }
 
 func BatchSendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
-	var sendData []types.Metrics
+	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
 
 	for attr, value := range sendInfo {
@@ -142,8 +148,8 @@ func BatchSendGauge(client *http.Client, sendInfo map[string]float64, hostAddr H
 	if err != nil {
 		return fmt.Errorf("failed to create http Request: %w", err)
 	}
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Set("Content-Encoding", contentEncode)
+	req.Header.Set(contentType, contentTypeValue)
+	req.Header.Set(contentEncoding, contentEncodingValue)
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -152,13 +158,13 @@ func BatchSendGauge(client *http.Client, sendInfo map[string]float64, hostAddr H
 		err = resp.Body.Close()
 	}()
 
-	log.Println("response Status:", resp.Status)
-	log.Println("response Headers:", resp.Header)
+	log.Println(responseStatusMsg, resp.Status)
+	log.Println(responseHeadersMsg, resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error in read response body: %w", err)
 	}
-	log.Println("response Body:", string(body))
+	log.Println(responseBodyMsg, string(body))
 	err = resp.Body.Close()
 	if err != nil {
 		_, err = io.Copy(os.Stdout, bytes.NewReader([]byte(err.Error())))
@@ -173,7 +179,7 @@ func BatchSendGauge(client *http.Client, sendInfo map[string]float64, hostAddr H
 func BatchSendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)
-	var sendData []types.Metrics
+	sendData := make([]types.Metrics, 0, 1)
 	metricInfo := types.Metrics{
 		ID:    "PollCount",
 		MType: "counter",
@@ -193,8 +199,8 @@ func BatchSendCounter(client *http.Client, pollCount int, hostAddr HostPort) (er
 	if err != nil {
 		return
 	}
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Set("Content-Encoding", contentEncode)
+	req.Header.Set(contentType, contentTypeValue)
+	req.Header.Set(contentEncoding, contentEncodingValue)
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -203,12 +209,12 @@ func BatchSendCounter(client *http.Client, pollCount int, hostAddr HostPort) (er
 		err = resp.Body.Close()
 	}()
 
-	log.Println("response Status:", resp.Status)
-	log.Println("response Headers:", resp.Header)
+	log.Println(responseStatusMsg, resp.Status)
+	log.Println(responseHeadersMsg, resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
-	log.Println("response Body:", string(body))
+	log.Println(responseBodyMsg, string(body))
 	return
 }
