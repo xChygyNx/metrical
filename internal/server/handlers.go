@@ -6,11 +6,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/xChygyNx/metrical/internal/server/types"
 	"io"
 	"net/http"
 	"strconv"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (
