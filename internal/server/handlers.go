@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/xChygyNx/metrical/internal/server/types"
@@ -75,7 +76,8 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 			}
 		}()
 
-		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+		defer cancel()
 		err = db.PingContext(ctx)
 		if err != nil {
 			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)

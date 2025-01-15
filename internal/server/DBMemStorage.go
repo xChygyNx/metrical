@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/xChygyNx/metrical/internal/server/types"
@@ -32,7 +33,8 @@ func isMetricInDB(db *sql.DB, table string, metricName string) (bool, error) {
 }
 
 func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error in create transaction for DB: %w", err)
