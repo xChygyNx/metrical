@@ -3,7 +3,9 @@ package agent
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/sethgrid/pester"
 	"io"
 	"log"
 	"net/http"
@@ -13,17 +15,17 @@ import (
 )
 
 const (
-	countGaugeMetrics    = 28
 	contentType          = "Content-Type"
 	contentTypeValue     = "application/json"
 	contentEncoding      = "Content-Encoding"
 	contentEncodingValue = "gzip"
+	countGaugeMetrics    = 28
 	responseStatusMsg    = "response Status: "
 	responseHeadersMsg   = "response Headers: "
 	responseBodyMsg      = "response Body: "
 )
 
-func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
+func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		urlString := "http://" + hostAddr.String() + "/update"
 
@@ -49,7 +51,7 @@ func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPo
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
 		resp, err := client.Do(req)
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
 		}
 		defer func() {
@@ -81,7 +83,7 @@ func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPo
 	return
 }
 
-func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err error) {
+func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
 	sendJSON := types.Metrics{
@@ -121,7 +123,7 @@ func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err err
 	return
 }
 
-func BatchSendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
+func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
 
@@ -176,7 +178,7 @@ func BatchSendGauge(client *http.Client, sendInfo map[string]float64, hostAddr H
 	return
 }
 
-func BatchSendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err error) {
+func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)
 	sendData := make([]types.Metrics, 0, 1)

@@ -26,6 +26,7 @@ const (
 	jsonContentType        = "application/json"
 	textContentType        = "text/plain"
 	writeHandlerErrorMsg   = "error of write data in http.ResponseWriter:"
+	errorMsgWildcard       = "%s %w"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
