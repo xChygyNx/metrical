@@ -3,7 +3,9 @@ package server
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgconn"
 	"strconv"
 	"time"
 
@@ -97,4 +99,22 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 		return fmt.Errorf("error in commit transaction to DB: %w", err)
 	}
 	return nil
+}
+
+func retryDBWrite(db *sql.DB, storage *types.MemStorage, retryCount int) (err error) {
+	var pgErr *pgconn.PgError
+	delays := make([]time.Duration, 0, retryCount)
+	delays = append(delays, 0*time.Second)
+	for i := 1; i < retryCount-1; i++ {
+		delays = append(delays, time.Duration(2*i-1)*time.Second)
+	}
+
+	for i := 0; i < retryCount; i++ {
+		time.Sleep(delays[i])
+		err = writeMetricStorageDB(db, storage)
+		if err == nil || !errors.As(err, &pgErr) {
+			break
+		}
+	}
+	return
 }

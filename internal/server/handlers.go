@@ -16,17 +16,18 @@ import (
 )
 
 const (
-	GAUGE   = "gauge"
-	COUNTER = "counter"
+	GAUGE   				= "gauge"
+	COUNTER 				= "counter"
 
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
 	internalServerErrorMsg = "Internal server error"
 	errorMsgWildcard       = "%s %w"
 	jsonContentType        = "application/json"
+	retryDBWriteCount      = 4
+	retryFileWriteCount    = 4
 	textContentType        = "text/plain"
 	writeHandlerErrorMsg   = "error of write data in http.ResponseWriter:"
-	errorMsgWildcard       = "%s %w"
 )
 
 func parseGaugeMetricValue(value string) (num float64, err error) {
@@ -114,7 +115,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 			return
 		}
 		if syncInfo.SyncFileRecord {
-			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
+			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
 				fmt.Println(errorMsg)
@@ -191,7 +192,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 		}
 
 		if syncInfo.DB != nil {
-			err = writeMetricStorageDB(syncInfo.DB, storage)
+			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
 				fmt.Println(errorMsg)
@@ -199,7 +200,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 				return
 			}
 		} else if syncInfo.SyncFileRecord {
-			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
+			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
 				http.Error(res, errorMsg, http.StatusBadRequest)
@@ -276,7 +277,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		}
 
 		if syncInfo.DB != nil {
-			err = writeMetricStorageDB(syncInfo.DB, storage)
+			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
 				fmt.Println(errorMsg)
@@ -284,7 +285,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 				return
 			}
 		} else if syncInfo.SyncFileRecord {
-			err = writeMetricStorageFile(syncInfo.FileMetricStorage, storage)
+			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
 				http.Error(res, errorMsg, http.StatusBadRequest)

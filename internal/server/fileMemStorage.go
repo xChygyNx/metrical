@@ -48,6 +48,23 @@ func writeMetricStorageFile(absStorageFilePath string, storage *types.MemStorage
 	return
 }
 
+func retryFileWrite(absStorageFilePath string, storage *types.MemStorage, retryCount int) (err error) {
+	delays := make([]time.Duration, 0, retryCount)
+	delays = append(delays, 0*time.Second)
+	for i := 1; i < retryCount-1; i++ {
+		delays = append(delays, time.Duration(2*i-1)*time.Second)
+	}
+
+	for i := 0; i < retryCount; i++ {
+		time.Sleep(delays[i])
+		err = writeMetricStorageFile(absStorageFilePath, storage)
+		if err == nil {
+			break
+		}
+	}
+	return
+}
+
 func restoreMetricStore(fileName string, storage *types.MemStorage) (err error) {
 	file, err := os.OpenFile(fileName, os.O_RDONLY, filePem)
 	if err != nil {
