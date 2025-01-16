@@ -563,6 +563,8 @@ issues:
       text: "lines are duplicate of"
     - path: "internal/server/handlers_test.go"
       text: "range-val-address: suspicious assignment of 'test'. range-loop variables always have the same address"
+    - path: "internal/server/DBMemStorage.go"
+      text: "for loop can be changed to use an integer range"
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0

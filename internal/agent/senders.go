@@ -5,12 +5,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sethgrid/pester"
 	"io"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/sethgrid/pester"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
