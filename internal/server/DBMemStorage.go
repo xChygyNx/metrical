@@ -105,7 +105,7 @@ func retryDBWrite(db *sql.DB, storage *types.MemStorage, retryCount int) (err er
 	var pgErr *pgconn.PgError
 	delays := make([]time.Duration, 0, retryCount)
 	delays = append(delays, 0*time.Second)
-	for i := 1; i < retryCount-1; i++ {
+	for i := 1; i < retryCount; i++ {
 		delays = append(delays, time.Duration(2*i-1)*time.Second)
 	}
 
