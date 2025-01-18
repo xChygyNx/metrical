@@ -189,7 +189,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 
 		if syncInfo.DB != nil {
 			err = writeMetricStorageDB(syncInfo.DB, storage)
-			if err != nil {
+			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
 				fmt.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
