@@ -3,10 +3,22 @@ package agent
 import (
 	"log"
 	"math/rand"
-	"net/http"
 	"runtime"
 	"time"
+
+	"github.com/sethgrid/pester"
 )
+
+const (
+	countRetries = 3
+)
+
+func getRetryClient() *pester.Client {
+	client := pester.New()
+	client.MaxRetries = countRetries
+	client.Backoff = pester.ExponentialBackoff
+	return client
+}
 
 func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	result := make(map[string]float64)
@@ -60,7 +72,7 @@ func Run() error {
 			pollCount++
 		case <-reportTicker.C:
 			sendInfo := prepareStatsForSend(&memStats)
-			client := &http.Client{}
+			client := getRetryClient()
 
 			err = SendGauge(client, sendInfo, config.HostAddr)
 			if err != nil {
@@ -73,6 +85,19 @@ func Run() error {
 				log.Printf("error in send counter: %v\n", err)
 				continue
 			}
+
+			err = BatchSendGauge(client, sendInfo, config.HostAddr)
+			if err != nil {
+				log.Printf("error in batch send gauge: %v\n", err)
+				continue
+			}
+
+			err = BatchSendCounter(client, pollCount, config.HostAddr)
+			if err != nil {
+				log.Printf("error in batch send counter: %v\n", err)
+				continue
+			}
+
 			pollCount = 0
 		}
 	}
