@@ -83,9 +83,7 @@ func Routing() (err error) {
 		defer func() {
 			err = syncInfo.DB.Close()
 		}()
-	}
-
-	if syncInfo.DB == nil && !syncInfo.SyncFileRecord {
+	} else if syncInfo.DB == nil && !syncInfo.SyncFileRecord {
 		go func() {
 			err = fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
 		}()
