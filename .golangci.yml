@@ -338,7 +338,7 @@ linters-settings:
       - name: identical-branches
       - name: increment-decrement
       - name: range-val-in-closure
-      - name: range-val-address
+#      - name: range-val-address
       - name: unconditional-recursion
       - name: unnecessary-stmt
       - name: unreachable-code

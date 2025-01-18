@@ -16,13 +16,15 @@ import (
 )
 
 const (
-	GAUGE                  = "gauge"
-	COUNTER                = "counter"
-	internalServerErrorMsg = "Internal server error"
-	jsonContentType        = "application/json"
-	textContentType        = "text/plain"
+	GAUGE   = "gauge"
+	COUNTER = "counter"
+
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
+	internalServerErrorMsg = "Internal server error"
+	errorMsgWildcard       = "%s %w"
+	jsonContentType        = "application/json"
+	textContentType        = "text/plain"
 	writeHandlerErrorMsg   = "error of write data in http.ResponseWriter:"
 )
 
@@ -123,7 +125,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write([]byte("OK"))
 		if err != nil {
-			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
+			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -215,7 +217,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
+			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -300,7 +302,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
-			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
+			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -439,7 +441,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(metricInfoStr)
 		if err != nil {
-			errorMsg := fmt.Errorf("%s %w", writeHandlerErrorMsg, err).Error()
+			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
