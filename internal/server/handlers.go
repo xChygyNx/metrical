@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	GAUGE   				= "gauge"
-	COUNTER 				= "counter"
+	GAUGE   = "gauge"
+	COUNTER = "counter"
 
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
