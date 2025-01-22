@@ -16,12 +16,14 @@ import (
 )
 
 const (
+	checkSumErrorMsg     = "error in checkHashSum:"
 	contentType          = "Content-Type"
 	contentTypeValue     = "application/json"
 	contentEncoding      = "Content-Encoding"
 	contentEncodingValue = "gzip"
 	countGaugeMetrics    = 28
 	encodingHeader       = "HashSHA256"
+	errorMsgWildcard     = "%s %w"
 	responseStatusMsg    = "response Status: "
 	responseHeadersMsg   = "response Headers: "
 	responseBodyMsg      = "response Body: "
@@ -70,7 +72,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		if len(resp.Header.Values(encodingHeader)) != 0 {
 			err = checkHashSum(resp)
 			if err != nil {
-				return fmt.Errorf("error in checkHashSum: %w", err)
+				return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
 			}
 		}
 		body, err := io.ReadAll(resp.Body)
@@ -136,7 +138,7 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	if len(resp.Header.Values(encodingHeader)) != 0 {
 		err = checkHashSum(resp)
 		if err != nil {
-			return fmt.Errorf("error in checkHashSum: %w", err)
+			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
 		}
 	}
 	body, err := io.ReadAll(resp.Body)
@@ -194,7 +196,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	if len(resp.Header.Values(encodingHeader)) != 0 {
 		err = checkHashSum(resp)
 		if err != nil {
-			return fmt.Errorf("error in checkHashSum: %w", err)
+			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
 		}
 	}
 	body, err := io.ReadAll(resp.Body)
@@ -256,7 +258,7 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	if len(resp.Header.Values(encodingHeader)) != 0 {
 		err = checkHashSum(resp)
 		if err != nil {
-			return fmt.Errorf("error in checkHashSum: %w", err)
+			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
 		}
 	}
 	body, err := io.ReadAll(resp.Body)

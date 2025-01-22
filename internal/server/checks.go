@@ -1,4 +1,4 @@
-package agent
+package server
 
 import (
 	"crypto/sha256"
@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func checkHashSum(resp *http.Response) error {
+func checkHashSum(resp *http.Request) error {
 	hashSum := resp.Header.Values(encodingHeader)[0]
 
 	body, err := io.ReadAll(resp.Body)
