@@ -11,6 +11,7 @@ type config struct {
 	HostAddr       HostPort
 	PollInterval   int
 	ReportInterval int
+	Sha256Key      string
 }
 
 func GetConfig() (*config, error) {
@@ -38,6 +39,13 @@ func GetConfig() (*config, error) {
 		config.ReportInterval = res
 	} else {
 		config.ReportInterval = agentConfig.ReportInterval
+	}
+
+	cryptoKey, ok := os.LookupEnv("KEY")
+	if ok {
+		config.Sha256Key = cryptoKey
+	} else {
+		config.Sha256Key = agentConfig.Sha256Key
 	}
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")

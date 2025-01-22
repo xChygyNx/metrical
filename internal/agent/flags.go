@@ -12,6 +12,7 @@ type AgentConfig struct {
 	HostPort       HostPort
 	PollInterval   int
 	ReportInterval int
+	Sha256Key      string
 }
 
 type HostPort struct {
@@ -43,8 +44,10 @@ func parseFlag() *AgentConfig {
 	agentConfig := new(AgentConfig)
 	defaultPollInterval := 2
 	defaultReportInterval := 10
+	defaultCryptoKey := ""
 	pollInterval := flag.Int("p", defaultPollInterval, "Interval of collect metrics in seconds")
 	reportInterval := flag.Int("r", defaultReportInterval, "Interval of send metrics on server in seconds")
+	cryptoKey := flag.String("k", defaultCryptoKey, "Crypto key for encoding send data")
 
 	hostPort := new(HostPort)
 	flag.Var(hostPort, "a", "Net address host:port")
@@ -52,6 +55,7 @@ func parseFlag() *AgentConfig {
 	flag.Parse()
 	agentConfig.PollInterval = *pollInterval
 	agentConfig.ReportInterval = *reportInterval
+	agentConfig.Sha256Key = *cryptoKey
 
 	if hostPort.Host == "" && hostPort.Port == 0 {
 		hostPort.Host = "localhost"
