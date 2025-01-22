@@ -8,10 +8,10 @@ import (
 )
 
 type config struct {
+	Sha256Key      string
 	HostAddr       HostPort
 	PollInterval   int
 	ReportInterval int
-	Sha256Key      string
 }
 
 func GetConfig() (*config, error) {

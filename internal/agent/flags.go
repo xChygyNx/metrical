@@ -9,10 +9,10 @@ import (
 )
 
 type AgentConfig struct {
+	Sha256Key      string
 	HostPort       HostPort
 	PollInterval   int
 	ReportInterval int
-	Sha256Key      string
 }
 
 type HostPort struct {

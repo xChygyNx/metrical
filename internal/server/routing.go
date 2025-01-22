@@ -74,7 +74,7 @@ func Routing() (err error) {
 		}
 	}
 
-	handlerConf, err := GetHandlerConf(*config)
+	handlerConf, err := GetHandlerConf(config)
 	if err != nil {
 		return fmt.Errorf("error in GetHandlerConf: %w", err)
 	}
