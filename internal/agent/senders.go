@@ -61,6 +61,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 			checkSum := sha256.Sum256(compressJSON)
 			fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 			req.Header.Set(encodingHeader, string(checkSum[:]))
+			fmt.Printf("CheckSum: %v\n", string(checkSum[:]))
 		}
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -130,6 +131,7 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 		checkSum := sha256.Sum256(compressJSON)
 		fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 		req.Header.Set(encodingHeader, string(checkSum[:]))
+		fmt.Printf("CheckSum: %v\n", string(checkSum[:]))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -257,6 +259,7 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 		checkSum := sha256.Sum256(compressJSON)
 		fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 		req.Header.Set(encodingHeader, string(checkSum[:]))
+		fmt.Printf("CheckSum: %v\n", string(checkSum[:]))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
