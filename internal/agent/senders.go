@@ -57,7 +57,9 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		req.Header.Set(contentEncoding, contentEncodingValue)
 		fmt.Printf("Config.Sha256Key: %v\n", config.Sha256Key)
 		if config.Sha256Key != "" {
+			fmt.Println("Count hash sum of json")
 			checkSum := sha256.Sum256(compressJSON)
+			fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 			req.Header.Set(encodingHeader, string(checkSum[:]))
 		}
 		resp, err := client.Do(req)
@@ -122,8 +124,11 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	fmt.Printf("Config.Sha256Key: %v\n", config.Sha256Key)
 	if config.Sha256Key != "" {
+		fmt.Println("Count hash sum of json")
 		checkSum := sha256.Sum256(compressJSON)
+		fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 		req.Header.Set(encodingHeader, string(checkSum[:]))
 	}
 	resp, err := client.Do(req)
@@ -182,7 +187,9 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	fmt.Printf("Config.Sha256Key: %v\n", config.Sha256Key)
 	if config.Sha256Key != "" {
+		fmt.Println("Count hash sum of json")
 		checkSum := sha256.Sum256(compressJSON)
+		fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 		req.Header.Set(encodingHeader, string(checkSum[:]))
 		fmt.Printf("CheckSum: %v\n", string(checkSum[:]))
 	}
@@ -244,8 +251,11 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	fmt.Printf("Config.Sha256Key: %v\n", config.Sha256Key)
 	if config.Sha256Key != "" {
+		fmt.Println("Count hash sum of json")
 		checkSum := sha256.Sum256(compressJSON)
+		fmt.Printf("Write hash sum in header: %v\n", string(checkSum[:]))
 		req.Header.Set(encodingHeader, string(checkSum[:]))
 	}
 	resp, err := client.Do(req)
