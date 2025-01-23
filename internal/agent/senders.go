@@ -55,6 +55,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		}
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
+		fmt.Printf("Config.Sha256Key: %v\n", config.Sha256Key)
 		if config.Sha256Key != "" {
 			checkSum := sha256.Sum256(compressJSON)
 			req.Header.Set(encodingHeader, string(checkSum[:]))
@@ -179,6 +180,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	fmt.Printf("Config.Sha256Key: %v\n", config.Sha256Key)
 	if config.Sha256Key != "" {
 		checkSum := sha256.Sum256(compressJSON)
 		req.Header.Set(encodingHeader, string(checkSum[:]))
