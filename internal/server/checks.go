@@ -9,6 +9,7 @@ import (
 
 func checkHashSum(resp *http.Request) error {
 	hashSum := resp.Header.Values(encodingHeader)[0]
+	fmt.Printf("HashSum in Header of request: %v\n", hashSum)
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -18,6 +19,7 @@ func checkHashSum(resp *http.Request) error {
 		err = resp.Body.Close()
 	}()
 	bodyHashSum := sha256.Sum256(body)
+	fmt.Printf("HashSum of body request: %v\n", bodyHashSum)
 
 	if hashSum != string(bodyHashSum[:]) {
 		return fmt.Errorf("error, didn't match hash sum: \n"+

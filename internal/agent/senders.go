@@ -184,6 +184,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	if config.Sha256Key != "" {
 		checkSum := sha256.Sum256(compressJSON)
 		req.Header.Set(encodingHeader, string(checkSum[:]))
+		fmt.Printf("CheckSum: %v\n", string(checkSum[:]))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
