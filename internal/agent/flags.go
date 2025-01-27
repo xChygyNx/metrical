@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -13,6 +14,7 @@ type AgentConfig struct {
 	HostPort       HostPort
 	PollInterval   int
 	ReportInterval int
+	RateLimit      int8
 }
 
 type HostPort struct {
@@ -42,12 +44,13 @@ func (hp *HostPort) Set(value string) error {
 
 func parseFlag() *AgentConfig {
 	agentConfig := new(AgentConfig)
-	defaultPollInterval := 2
-	defaultReportInterval := 10
-	defaultCryptoKey := ""
+	const defaultPollInterval = 2
+	const defaultReportInterval = 10
+	const defaultCryptoKey = ""
 	pollInterval := flag.Int("p", defaultPollInterval, "Interval of collect metrics in seconds")
 	reportInterval := flag.Int("r", defaultReportInterval, "Interval of send metrics on server in seconds")
 	cryptoKey := flag.String("k", defaultCryptoKey, "Crypto key for encoding send data")
+	rateLimit := flag.Int("l", runtime.NumCPU(), "Count of workers for collect metrics")
 
 	hostPort := new(HostPort)
 	flag.Var(hostPort, "a", "Net address host:port")
@@ -56,6 +59,7 @@ func parseFlag() *AgentConfig {
 	agentConfig.PollInterval = *pollInterval
 	agentConfig.ReportInterval = *reportInterval
 	agentConfig.Sha256Key = *cryptoKey
+	agentConfig.RateLimit = int8(*rateLimit)
 
 	if hostPort.Host == "" && hostPort.Port == 0 {
 		hostPort.Host = "localhost"

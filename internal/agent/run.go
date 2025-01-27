@@ -1,12 +1,14 @@
 package agent
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"runtime"
 	"time"
 
 	"github.com/sethgrid/pester"
+	"github.com/shirou/gopsutil/v4/mem"
 )
 
 const (
@@ -20,7 +22,7 @@ func getRetryClient() *pester.Client {
 	return client
 }
 
-func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
+func prepareStatsForSend(stats *runtime.MemStats, memStats *mem.VirtualMemoryStat) map[string]float64 {
 	result := make(map[string]float64)
 
 	result["Alloc"] = float64(stats.Alloc)
@@ -50,14 +52,30 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	result["StackSys"] = float64(stats.StackSys)
 	result["Sys"] = float64(stats.Sys)
 	result["TotalAlloc"] = float64(stats.TotalAlloc)
+	result["TotalMemory"] = float64(memStats.Total)
+	result["FreeMemory"] = float64(memStats.Free)
+	result["CPUutilization1"] = float64(runtime.NumCPU())
 	result["RandomValue"] = rand.Float64()
 
 	return result
 }
 
+func worker(memStats *runtime.MemStats, memStatsExtra *mem.VirtualMemoryStat, jobs <-chan struct{}) error {
+	for range jobs {
+		runtime.ReadMemStats(memStats)
+		memStatsExtra, err := mem.VirtualMemory()
+		if err != nil {
+			fmt.Errorf("error in collect metrics by gopsutil: %w", err)
+			continue
+		}
+	}
+
+}
+
 func Run() error {
 	var pollCount int
-	var memStats runtime.MemStats
+	var memStats *runtime.MemStats
+	var memStatsExtra *mem.VirtualMemoryStat
 
 	config, err := GetConfig()
 	if err != nil {
@@ -65,14 +83,20 @@ func Run() error {
 	}
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
+	client := getRetryClient()
+
 	for {
 		select {
 		case <-pollTicker.C:
-			runtime.ReadMemStats(&memStats)
+			runtime.ReadMemStats(memStats)
+			memStatsExtra, err = mem.VirtualMemory()
+			if err != nil {
+				log.Printf(fmt.Errorf("error in collect metrics by gopsutil: %w", err).Error())
+				continue
+			}
 			pollCount++
 		case <-reportTicker.C:
-			sendInfo := prepareStatsForSend(&memStats)
-			client := getRetryClient()
+			sendInfo := prepareStatsForSend(memStats, memStatsExtra)
 
 			err = SendGauge(client, sendInfo, config)
 			if err != nil {

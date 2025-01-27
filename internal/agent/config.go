@@ -12,6 +12,7 @@ type config struct {
 	HostAddr       HostPort
 	PollInterval   int
 	ReportInterval int
+	RateLimit      int8
 }
 
 func GetConfig() (*config, error) {
@@ -56,6 +57,17 @@ func GetConfig() (*config, error) {
 		}
 	} else {
 		config.HostAddr = agentConfig.HostPort
+	}
+
+	rateLimit, ok := os.LookupEnv("RATE_LIMIT")
+	if ok {
+		rateLimit, err := strconv.ParseInt(rateLimit, 10, 8)
+		if err != nil {
+			return nil, err
+		}
+		config.RateLimit = int8(rateLimit)
+	} else {
+		config.RateLimit = agentConfig.RateLimit
 	}
 
 	return config, nil
