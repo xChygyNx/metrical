@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -13,7 +14,7 @@ func checkHashSum(resp *http.Request) error {
 	log.Printf("HashSum in Header of request: %v\n", hashSum)
 
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("error in read response body: %w", err)
 	}
 	defer func() {

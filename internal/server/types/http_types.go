@@ -3,6 +3,7 @@ package types
 import (
 	"bytes"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -57,7 +58,7 @@ type gzipReader struct {
 
 func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 	bodyRec, err := io.ReadAll(r)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("error in read body of request in gzipReader: %w", err)
 	}
 	gr, err := gzip.NewReader(bytes.NewBuffer(bodyRec))

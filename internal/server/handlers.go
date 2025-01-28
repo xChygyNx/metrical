@@ -161,7 +161,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		}
 
 		bodyByte, err := io.ReadAll(req.Body)
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := "error in read response body: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
