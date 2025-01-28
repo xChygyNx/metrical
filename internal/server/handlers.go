@@ -103,13 +103,13 @@ func SaveMetricHandleOld(storage *types.MemStorage, handlerConf *types.HandlerCo
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
 
-		if handlerConf.Sha256Key != "" {
-			err := checkHashSum(req)
-			if err != nil {
-				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-				return
-			}
-		}
+		//if handlerConf.Sha256Key != "" {
+		//	err := checkHashSum(req)
+		//	if err != nil {
+		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+		//		return
+		//	}
+		//}
 
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
@@ -152,13 +152,13 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 
-		if handlerConf.Sha256Key != "" {
-			err := checkHashSum(req)
-			if err != nil {
-				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-				return
-			}
-		}
+		//if handlerConf.Sha256Key != "" {
+		//	err := checkHashSum(req)
+		//	if err != nil {
+		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+		//		return
+		//	}
+		//}
 
 		bodyByte, err := io.ReadAll(req.Body)
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -258,13 +258,13 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 
-		if handlerConf.Sha256Key != "" {
-			err := checkHashSum(req)
-			if err != nil {
-				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-				return
-			}
-		}
+		//if handlerConf.Sha256Key != "" {
+		//	err := checkHashSum(req)
+		//	if err != nil {
+		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+		//		return
+		//	}
+		//}
 
 		bodyByte, err := io.ReadAll(req.Body)
 
@@ -407,13 +407,13 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
-		if handlerConf.Sha256Key != "" {
-			err := checkHashSum(req)
-			if err != nil {
-				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-				return
-			}
-		}
+		//if handlerConf.Sha256Key != "" {
+		//	err := checkHashSum(req)
+		//	if err != nil {
+		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+		//		return
+		//	}
+		//}
 		bodyByte, err := io.ReadAll(req.Body)
 		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := fmt.Errorf("error in read response body: %w", err).Error()
