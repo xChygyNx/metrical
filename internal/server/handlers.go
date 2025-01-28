@@ -28,7 +28,6 @@ const (
 	errorMsgWildcard       = "%s %w"
 	encodingHeader         = "HashSHA256"
 	jsonContentType        = "application/json"
-	notMatchedHashSumMsg   = "Didn't match hash sums "
 	retryDBWriteCount      = 4
 	retryFileWriteCount    = 4
 	textContentType        = "text/plain"
@@ -103,17 +102,10 @@ func SaveMetricHandleOld(storage *types.MemStorage, handlerConf *types.HandlerCo
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
 
-		//if handlerConf.Sha256Key != "" {
-		//	err := checkHashSum(req)
-		//	if err != nil {
-		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-		//		return
-		//	}
-		//}
-
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
 			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
+			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
@@ -124,6 +116,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, handlerConf *types.HandlerCo
 		err := saveMetricValue(metricType, metricName, metricValue, storage)
 		if err != nil {
 			errorMsg := fmt.Sprintf("Value of metric must be numeric, got %s, err: %v\n", metricValue, err)
+			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
@@ -151,14 +144,6 @@ func SaveMetricHandleOld(storage *types.MemStorage, handlerConf *types.HandlerCo
 func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
-
-		//if handlerConf.Sha256Key != "" {
-		//	err := checkHashSum(req)
-		//	if err != nil {
-		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-		//		return
-		//	}
-		//}
 
 		bodyByte, err := io.ReadAll(req.Body)
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -209,6 +194,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			bodyStr := string(bodyByte)
 			errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
 				"|\n" + bodyStr
+			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
@@ -225,6 +211,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			err = retryFileWrite(handlerConf.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+				log.Println(errorMsg)
 				http.Error(res, errorMsg, http.StatusBadRequest)
 				return
 			}
@@ -257,14 +244,6 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
-
-		//if handlerConf.Sha256Key != "" {
-		//	err := checkHashSum(req)
-		//	if err != nil {
-		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-		//		return
-		//	}
-		//}
 
 		bodyByte, err := io.ReadAll(req.Body)
 
@@ -307,6 +286,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 				bodyStr := string(bodyByte)
 				errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
 					"|\n" + bodyStr
+				log.Println(errorMsg)
 				http.Error(res, errorMsg, http.StatusBadRequest)
 				return
 			}
@@ -323,6 +303,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 			err = retryFileWrite(handlerConf.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
+				log.Println(errorMsg)
 				http.Error(res, errorMsg, http.StatusBadRequest)
 				return
 			}
@@ -370,6 +351,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
 			errorMsg := "Unknown metric type, must be gauge or counter, got " + metricType
+			log.Println(errorMsg)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
@@ -407,13 +389,6 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
-		//if handlerConf.Sha256Key != "" {
-		//	err := checkHashSum(req)
-		//	if err != nil {
-		//		http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
-		//		return
-		//	}
-		//}
 		bodyByte, err := io.ReadAll(req.Body)
 		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := fmt.Errorf("error in read response body: %w", err).Error()
