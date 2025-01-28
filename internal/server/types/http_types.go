@@ -72,7 +72,11 @@ func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 }
 
 func (gr *gzipReader) Read(p []byte) (int, error) {
-	return gr.reader.Read(p)
+	n, err := gr.reader.Read(p)
+	if err != nil {
+		return 0, fmt.Errorf("error in read of Gzip Reader: %w", err)
+	}
+	return n, nil
 }
 
 func (gr *gzipReader) Close() error {

@@ -8,9 +8,9 @@ import (
 )
 
 type gaugeInsertQuery struct {
-	exec  bool
 	query string
 	args  []interface{}
+	exec  bool
 }
 
 func NewGaugeInsertQuery() gaugeInsertQuery {
@@ -24,29 +24,30 @@ func NewGaugeInsertQuery() gaugeInsertQuery {
 func (giq *gaugeInsertQuery) AddRecord(metricName string, metricValue string) {
 	giq.exec = true
 	numArgs := len(giq.args)
-	queryParts := []string{giq.query, fmt.Sprintf("($%d, $%d)", numArgs+1, numArgs+2)}
+	firstArgOffset := 1
+	secondArgOffset := 1
+	queryParts := []string{giq.query, fmt.Sprintf("($%d, $%d)",
+		numArgs+firstArgOffset, numArgs+secondArgOffset)}
 	giq.query = strings.Join(queryParts, ", ")
-	giq.args = append(giq.args, metricName)
-	giq.args = append(giq.args, metricValue)
+	giq.args = append(giq.args, metricName, metricValue)
 }
 
-func (giq *gaugeInsertQuery) ExecInsert(tx *sql.Tx, ctx context.Context) (err error) {
-	if giq.exec {
-		_, err = tx.ExecContext(ctx, giq.query, giq.args...)
-	} else {
-		return
+func (giq *gaugeInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
+	_, err = tx.ExecContext(ctx, giq.query, giq.args...)
+	if err != nil {
+		return fmt.Errorf("error in insert new records in Gauge Tables of Postgresql: %w", err)
 	}
-	return err
+	return nil
 }
 
 type counterInsertQuery struct {
-	exec  bool
 	query string
 	args  []interface{}
+	exec  bool
 }
 
-func NewCounterInsertQuery() gaugeInsertQuery {
-	return gaugeInsertQuery{
+func NewCounterInsertQuery() counterInsertQuery {
+	return counterInsertQuery{
 		exec:  false,
 		query: "INSERT INTO counter(metric_name, value) VALUES ",
 		args:  make([]interface{}, 0),
@@ -58,15 +59,13 @@ func (ciq *counterInsertQuery) AddRecord(metricName string, metricValue string) 
 	numArgs := len(ciq.args)
 	queryParts := []string{ciq.query, fmt.Sprintf("($%d, $%d)", numArgs+1, numArgs+2)}
 	ciq.query = strings.Join(queryParts, ", ")
-	ciq.args = append(ciq.args, metricName)
-	ciq.args = append(ciq.args, metricValue)
+	ciq.args = append(ciq.args, metricName, metricValue)
 }
 
-func (ciq *counterInsertQuery) ExecInsert(tx *sql.Tx, ctx context.Context) (err error) {
-	if ciq.exec {
-		_, err = tx.ExecContext(ctx, ciq.query, ciq.args...)
-	} else {
-		return
+func (ciq *counterInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
+	_, err = tx.ExecContext(ctx, ciq.query, ciq.args...)
+	if err != nil {
+		return fmt.Errorf("error in insert new records in Counter Tables of Postgresql: %w", err)
 	}
-	return err
+	return nil
 }

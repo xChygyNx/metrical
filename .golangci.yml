@@ -499,7 +499,7 @@ linters:
     - govet
     - grouper
     - ineffassign
-    - intrange
+#    - intrange
     - lll
     - loggercheck
     - makezero

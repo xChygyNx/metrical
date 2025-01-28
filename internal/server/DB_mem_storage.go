@@ -69,7 +69,7 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 			giq.AddRecord(k, v)
 		}
 	}
-	err = giq.ExecInsert(tx, ctx)
+	err = giq.ExecInsert(ctx, tx)
 	if err != nil {
 		return fmt.Errorf("error in execution new record in Gauge metric table in PostgreSQL: %w", err)
 	}
@@ -95,7 +95,7 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 			ciq.AddRecord(k, v)
 		}
 	}
-	err = ciq.ExecInsert(tx, ctx)
+	err = ciq.ExecInsert(ctx, tx)
 	if err != nil {
 		return fmt.Errorf("error in execution new record in Counter metric table in PostgreSQL: %w", err)
 	}
