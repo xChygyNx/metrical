@@ -57,7 +57,10 @@ func NewCounterInsertQuery() counterInsertQuery {
 func (ciq *counterInsertQuery) AddRecord(metricName string, metricValue string) {
 	ciq.exec = true
 	numArgs := len(ciq.args)
-	queryParts := []string{ciq.query, fmt.Sprintf("($%d, $%d)", numArgs+1, numArgs+2)}
+	firstArgOffset := 1
+	secondArgOffset := 1
+	queryParts := []string{ciq.query, fmt.Sprintf("($%d, $%d)",
+		numArgs+firstArgOffset, numArgs+secondArgOffset)}
 	ciq.query = strings.Join(queryParts, ", ")
 	ciq.args = append(ciq.args, metricName, metricValue)
 }
