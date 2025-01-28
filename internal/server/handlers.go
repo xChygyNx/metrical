@@ -6,6 +6,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -160,15 +161,16 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		}
 
 		bodyByte, err := io.ReadAll(req.Body)
-		defer func() {
-			err = req.Body.Close()
-		}()
 		if err != nil {
 			errorMsg := "error in read response body: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			err = req.Body.Close()
+		}()
+
 		var metricData types.Metrics
 
 		err = json.Unmarshal(bodyByte, &metricData)
@@ -265,15 +267,16 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 		}
 
 		bodyByte, err := io.ReadAll(req.Body)
-		defer func() {
-			err = req.Body.Close()
-		}()
-		if err != nil {
+
+		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := "error in read response body: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			err = req.Body.Close()
+		}()
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
 
 		err = json.Unmarshal(bodyByte, &metricsData)
@@ -412,15 +415,16 @@ func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerCo
 			}
 		}
 		bodyByte, err := io.ReadAll(req.Body)
-		defer func() {
-			err = req.Body.Close()
-		}()
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := fmt.Errorf("error in read response body: %w", err).Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			err = req.Body.Close()
+		}()
+
 		var reqJSON types.Metrics
 
 		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))

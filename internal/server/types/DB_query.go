@@ -25,17 +25,23 @@ func (giq *gaugeInsertQuery) AddRecord(metricName string, metricValue string) {
 	giq.exec = true
 	numArgs := len(giq.args)
 	firstArgOffset := 1
-	secondArgOffset := 1
+	secondArgOffset := 2
 	queryParts := []string{giq.query, fmt.Sprintf("($%d, $%d)",
 		numArgs+firstArgOffset, numArgs+secondArgOffset)}
-	giq.query = strings.Join(queryParts, ", ")
+	sep := ", "
+	if numArgs == 0 {
+		sep = " "
+	}
+	giq.query = strings.Join(queryParts, sep)
 	giq.args = append(giq.args, metricName, metricValue)
 }
 
 func (giq *gaugeInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
-	_, err = tx.ExecContext(ctx, giq.query, giq.args...)
-	if err != nil {
-		return fmt.Errorf("error in insert new records in Gauge Tables of Postgresql: %w", err)
+	if giq.exec {
+		_, err = tx.ExecContext(ctx, giq.query, giq.args...)
+		if err != nil {
+			return fmt.Errorf("error in insert new records in Gauge Tables of Postgresql: %w", err)
+		}
 	}
 	return nil
 }
@@ -49,7 +55,7 @@ type counterInsertQuery struct {
 func NewCounterInsertQuery() counterInsertQuery {
 	return counterInsertQuery{
 		exec:  false,
-		query: "INSERT INTO counter(metric_name, value) VALUES ",
+		query: "INSERT INTO counters(metric_name, value) VALUES ",
 		args:  make([]interface{}, 0),
 	}
 }
@@ -58,17 +64,24 @@ func (ciq *counterInsertQuery) AddRecord(metricName string, metricValue string) 
 	ciq.exec = true
 	numArgs := len(ciq.args)
 	firstArgOffset := 1
-	secondArgOffset := 1
+	secondArgOffset := 2
 	queryParts := []string{ciq.query, fmt.Sprintf("($%d, $%d)",
 		numArgs+firstArgOffset, numArgs+secondArgOffset)}
-	ciq.query = strings.Join(queryParts, ", ")
+	sep := ", "
+	if numArgs == 0 {
+		sep = " "
+	}
+	ciq.query = strings.Join(queryParts, sep)
 	ciq.args = append(ciq.args, metricName, metricValue)
 }
 
 func (ciq *counterInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
-	_, err = tx.ExecContext(ctx, ciq.query, ciq.args...)
-	if err != nil {
-		return fmt.Errorf("error in insert new records in Counter Tables of Postgresql: %w", err)
+	if ciq.exec {
+		_, err = tx.ExecContext(ctx, ciq.query, ciq.args...)
+		if err != nil {
+			fmt.Println(err.Error())
+			return fmt.Errorf("error in insert new records in Counter Tables of Postgresql: %w", err)
+		}
 	}
 	return nil
 }
