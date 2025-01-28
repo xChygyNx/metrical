@@ -284,7 +284,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 				}
 			default:
 				bodyStr := string(bodyByte)
-				errorMsg := "Unknown metric type, must be gauge or counter, got |" + metricData.MType +
+				errorMsg := "Unknown metric type in batch, must be gauge or counter, got |" + metricData.MType +
 					"|\n" + bodyStr
 				log.Println(errorMsg)
 				http.Error(res, errorMsg, http.StatusBadRequest)

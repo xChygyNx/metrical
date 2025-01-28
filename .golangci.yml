@@ -561,6 +561,8 @@ issues:
       text: "error returned from external package is unwrapped: sig: func "
     - path: "internal/server/types/types_test.go"
       text: "lines are duplicate of"
+    - path: "internal/server/handlers.go"
+      text: "lines are duplicate of"
     - path: "internal/server/handlers_test.go"
       text: "range-val-address: suspicious assignment of 'test'. range-loop variables always have the same address"
     - path: "internal/server/fileMemStorage.go"
