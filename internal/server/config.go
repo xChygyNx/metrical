@@ -14,14 +14,16 @@ import (
 )
 
 const (
-	sqlCreateGaugeTableCmd = "CREATE TABLE IF NOT EXISTS gauges (" +
-		"	metric_name		varchar(100) PRIMARY KEY," +
-		"	value			double precision" +
-		");"
-	sqlCreateCounterTableCmd = "CREATE TABLE IF NOT EXISTS counters (" +
-		"	metric_name		varchar(100) PRIMARY KEY," +
-		"	value			integer" +
-		");"
+	sqlCreateGaugeTableCmd = `
+		CREATE TABLE IF NOT EXISTS gauges (
+			metric_name		varchar(100) PRIMARY KEY, +
+			value			double precision NOT NULL +
+		);`
+	sqlCreateCounterTableCmd = `
+		CREATE TABLE IF NOT EXISTS counters (
+			metric_name		varchar(100) PRIMARY KEY,
+			value			integer NOT NULL
+		);`
 )
 
 type HostPort struct {

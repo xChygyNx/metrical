@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -65,7 +66,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 		db, err := sql.Open("pgx", dBAddress)
 		if err != nil {
 			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -74,7 +75,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 			err := db.Close()
 			if err != nil {
 				errorMsg := fmt.Errorf("can't close connection with DB videos: %w", err)
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -85,7 +86,7 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 		err = db.PingContext(ctx)
 		if err != nil {
 			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -118,7 +119,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -128,7 +129,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 		_, err = res.Write([]byte("OK"))
 		if err != nil {
 			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -160,7 +161,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 			value, ok := storage.GetGauge(metricData.ID)
 			if !ok {
 				errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -174,7 +175,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 			value, ok := storage.GetCounter(metricData.ID)
 			if !ok {
 				errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -195,7 +196,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -211,7 +212,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 		encodedResponseData, err := json.Marshal(responseData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -220,7 +221,7 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
 			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -237,14 +238,14 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		}()
 		if err != nil {
 			errorMsg := "error in read response body: " + err.Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
 
 		err = json.Unmarshal(bodyByte, &metricsData)
-		fmt.Printf("Unmarshalling metricsData: %v\n", metricsData)
+		log.Printf("Unmarshalling metricsData: %v\n", metricsData)
 
 		for _, metricData := range metricsData {
 			metricName := metricData.ID
@@ -254,7 +255,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 				_, ok := storage.GetGauge(metricData.ID)
 				if !ok {
 					errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
-					fmt.Println(errorMsg)
+					log.Println(errorMsg)
 					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 					return
 				}
@@ -263,7 +264,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 				_, ok := storage.GetCounter(metricData.ID)
 				if !ok {
 					errorMsg := fmt.Sprintf("Value counter metric %s don't saved", metricData.ID)
-					fmt.Println(errorMsg)
+					log.Println(errorMsg)
 					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 					return
 				}
@@ -280,7 +281,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -296,7 +297,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		encodedResponseData, err := json.Marshal(metricsData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -305,7 +306,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
 			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -346,7 +347,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			_, err := res.Write([]byte(strconv.FormatInt(metricValue, 10)))
 			if err != nil {
 				errorMsg := fmt.Errorf("error in format integer from receive data: %w", err).Error()
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -354,7 +355,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			_, err := res.Write([]byte(strconv.FormatFloat(metricValue, 'f', -1, 64)))
 			if err != nil {
 				errorMsg := fmt.Errorf("error in format float from receive data: %w", err).Error()
-				fmt.Println(errorMsg)
+				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
@@ -373,7 +374,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		}()
 		if err != nil {
 			errorMsg := fmt.Errorf("error in read response body: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -383,7 +384,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		err = requestDecoder.Decode(&reqJSON)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in  decode response body: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -409,7 +410,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		responseData, err := json.Marshal(reqJSON)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize response for send by server: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -417,7 +418,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		_, err = res.Write(responseData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in write body of response: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -435,7 +436,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		metricInfoStr, err := json.Marshal(metricsInfo)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in serialize of metrics storage: %w", err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -444,7 +445,7 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 		_, err = res.Write(metricInfoStr)
 		if err != nil {
 			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
-			fmt.Println(errorMsg)
+			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
@@ -466,7 +467,7 @@ func GzipHandler(internal http.Handler) http.Handler {
 				err := gzipReader.Close()
 				if err != nil {
 					errorMsg := fmt.Errorf("error in close gzipReader: %w", err).Error()
-					fmt.Println(errorMsg)
+					log.Println(errorMsg)
 					http.Error(w, internalServerErrorMsg, http.StatusInternalServerError)
 					return
 				}

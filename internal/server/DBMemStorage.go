@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"time"
 
@@ -13,14 +14,14 @@ import (
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
-func isMetricInDB(db *sql.DB, table string, metricName string) (bool, error) {
+func isMetricInDB(tx *sql.Tx, table string, metricName string) (bool, error) {
 	var records *sql.Rows
 	var err error
 	if table == "gauges" {
-		records, err = db.QueryContext(context.Background(),
+		records, err = tx.QueryContext(context.Background(),
 			"SELECT * FROM gauges WHERE metric_name = $1", metricName)
 	} else if table == "counters" {
-		records, err = db.QueryContext(context.Background(),
+		records, err = tx.QueryContext(context.Background(),
 			"SELECT * FROM counters WHERE metric_name = $1", metricName)
 	}
 
@@ -45,37 +46,39 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 		err = tx.Rollback()
 	}()
 
+	giq := types.NewGaugeInsertQuery()
 	for k, v := range storage.GetGauges() {
 		val, err := strconv.ParseFloat(v, 64)
 		if err != nil {
 			return fmt.Errorf("error in convert gauge value: %w", err)
 		}
-		metricExist, err := isMetricInDB(db, "gauges", k)
+		metricExist, err := isMetricInDB(tx, "gauges", k)
 		if err != nil {
 			return fmt.Errorf("error in search gauge metric %s in DB: %w", k, err)
 		}
 		if metricExist {
-			_, err = tx.ExecContext(ctx, "UPDATE gauges "+
-				"SET value = value  +$1 "+
-				"WHERE metric_name = $2;", val, k)
+			_, err = tx.ExecContext(ctx, `UPDATE gauges 
+				SET value = $1 
+				WHERE metric_name = $2;`, val, k)
 			if err != nil {
 				return fmt.Errorf("error in update data in gauges table: %w", err)
 			}
 		} else {
-			_, err = tx.ExecContext(ctx, "INSERT INTO gauges(metric_name, value) "+
-				"VALUES ($1, $2)", k, val)
-			if err != nil {
-				return fmt.Errorf("error in update data in gauges table: %w", err)
-			}
+			giq.AddRecord(k, v)
 		}
 	}
+	err = giq.ExecInsert(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("error in execution new record in Gauge metric table in PostgreSQL: %w", err)
+	}
+	ciq := types.NewCounterInsertQuery()
 	for k, v := range storage.GetCounters() {
-		fmt.Printf("K = %s, V = %s\n", k, v)
+		log.Printf("K = %s, V = %s\n", k, v)
 		diff, err := strconv.Atoi(v)
 		if err != nil {
 			return fmt.Errorf("error in convert counter value: %w", err)
 		}
-		metricExist, err := isMetricInDB(db, "counters", k)
+		metricExist, err := isMetricInDB(tx, "counters", k)
 		if err != nil {
 			return fmt.Errorf("error in search counter metric %s in DB: %w", k, err)
 		}
@@ -87,13 +90,14 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 				return fmt.Errorf("error in update data in counters table: %w", err)
 			}
 		} else {
-			_, err = tx.ExecContext(ctx, "INSERT INTO counters(metric_name, value) "+
-				"VALUES ($1, $2)", k, diff)
-			if err != nil {
-				return fmt.Errorf("error in update data in counters table: %w", err)
-			}
+			ciq.AddRecord(k, v)
 		}
 	}
+	err = ciq.ExecInsert(ctx, tx)
+	if err != nil {
+		return fmt.Errorf("error in execution new record in Counter metric table in PostgreSQL: %w", err)
+	}
+
 	err = tx.Commit()
 	if err != nil {
 		return fmt.Errorf("error in commit transaction to DB: %w", err)
