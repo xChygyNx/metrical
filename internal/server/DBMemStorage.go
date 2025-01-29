@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -48,24 +46,7 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 
 	giq := types.NewGaugeInsertQuery()
 	for k, v := range storage.GetGauges() {
-		val, err := strconv.ParseFloat(v, 64)
-		if err != nil {
-			return fmt.Errorf("error in convert gauge value: %w", err)
-		}
-		metricExist, err := isMetricInDB(tx, "gauges", k)
-		if err != nil {
-			return fmt.Errorf("error in search gauge metric %s in DB: %w", k, err)
-		}
-		if metricExist {
-			_, err = tx.ExecContext(ctx, `UPDATE gauges 
-				SET value = $1 
-				WHERE metric_name = $2;`, val, k)
-			if err != nil {
-				return fmt.Errorf("error in update data in gauges table: %w", err)
-			}
-		} else {
-			giq.AddRecord(k, v)
-		}
+		giq.AddRecord(k, v)
 	}
 	err = giq.ExecInsert(ctx, tx)
 	if err != nil {
@@ -73,25 +54,7 @@ func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 	}
 	ciq := types.NewCounterInsertQuery()
 	for k, v := range storage.GetCounters() {
-		log.Printf("K = %s, V = %s\n", k, v)
-		diff, err := strconv.Atoi(v)
-		if err != nil {
-			return fmt.Errorf("error in convert counter value: %w", err)
-		}
-		metricExist, err := isMetricInDB(tx, "counters", k)
-		if err != nil {
-			return fmt.Errorf("error in search counter metric %s in DB: %w", k, err)
-		}
-		if metricExist {
-			_, err = tx.ExecContext(ctx, "UPDATE counters "+
-				"SET value = value  +$1 "+
-				"WHERE metric_name = $2;", diff, k)
-			if err != nil {
-				return fmt.Errorf("error in update data in counters table: %w", err)
-			}
-		} else {
-			ciq.AddRecord(k, v)
-		}
+		ciq.AddRecord(k, v)
 	}
 	err = ciq.ExecInsert(ctx, tx)
 	if err != nil {

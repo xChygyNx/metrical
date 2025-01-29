@@ -38,6 +38,8 @@ func (giq *gaugeInsertQuery) AddRecord(metricName string, metricValue string) {
 
 func (giq *gaugeInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
 	if giq.exec {
+		giq.exec = false
+		giq.query = giq.query + ` ON CONFLICT (metric_name) DO UPDATE SET value = EXCLUDED.value`
 		_, err = tx.ExecContext(ctx, giq.query, giq.args...)
 		if err != nil {
 			return fmt.Errorf("error in insert new records in Gauge Tables of Postgresql: %w", err)
@@ -77,9 +79,10 @@ func (ciq *counterInsertQuery) AddRecord(metricName string, metricValue string) 
 
 func (ciq *counterInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
 	if ciq.exec {
+		ciq.exec = false
+		ciq.query = ciq.query + ` ON CONFLICT (metric_name) DO UPDATE SET value = EXCLUDED.value + counters.value`
 		_, err = tx.ExecContext(ctx, ciq.query, ciq.args...)
 		if err != nil {
-			fmt.Println(err.Error())
 			return fmt.Errorf("error in insert new records in Counter Tables of Postgresql: %w", err)
 		}
 	}
