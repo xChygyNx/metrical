@@ -69,12 +69,6 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 
 		log.Println(responseStatusMsg, resp.Status)
 		log.Println(responseHeadersMsg, resp.Header)
-		if len(resp.Header.Values(encodingHeader)) != 0 {
-			err = checkHashSum(resp)
-			if err != nil {
-				return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
-			}
-		}
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("error in read response body: %w", err)
@@ -135,12 +129,6 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
-	if len(resp.Header.Values(encodingHeader)) != 0 {
-		err = checkHashSum(resp)
-		if err != nil {
-			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
-		}
-	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
@@ -193,12 +181,6 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
-	if len(resp.Header.Values(encodingHeader)) != 0 {
-		err = checkHashSum(resp)
-		if err != nil {
-			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
-		}
-	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error in read response body: %w", err)
@@ -255,12 +237,6 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
-	if len(resp.Header.Values(encodingHeader)) != 0 {
-		err = checkHashSum(resp)
-		if err != nil {
-			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
-		}
-	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
