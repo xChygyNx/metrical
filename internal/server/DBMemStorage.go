@@ -12,27 +12,6 @@ import (
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
-func isMetricInDB(tx *sql.Tx, table string, metricName string) (bool, error) {
-	var records *sql.Rows
-	var err error
-	if table == "gauges" {
-		records, err = tx.QueryContext(context.Background(),
-			"SELECT * FROM gauges WHERE metric_name = $1", metricName)
-	} else if table == "counters" {
-		records, err = tx.QueryContext(context.Background(),
-			"SELECT * FROM counters WHERE metric_name = $1", metricName)
-	}
-
-	if err != nil {
-		return false, fmt.Errorf("error in search data in table %s: %w", table, err)
-	}
-	err = records.Err()
-	if err != nil {
-		return false, fmt.Errorf("error in search data in table %s: %w", table, err)
-	}
-	return records.Next(), nil
-}
-
 func writeMetricStorageDB(db *sql.DB, storage *types.MemStorage) (err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
