@@ -15,7 +15,7 @@ func checkHashSum(resp *http.Response) error {
 	log.Printf("Hash sum from Response Header in agent: %s\n", hashSum)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil && !errors.Is(err, io.EOF) {
-		return fmt.Errorf("error in read response body: %w", err)
+		return fmt.Errorf("error in read response body1: %w", err)
 	}
 	defer func() {
 		err = resp.Body.Close()

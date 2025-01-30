@@ -165,7 +165,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			err = req.Body.Close()
 		}()
 		if err != nil {
-			errorMsg := "error in read response body: " + err.Error()
+			errorMsg := "error in read response body5: " + err.Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -271,7 +271,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 			err = req.Body.Close()
 		}()
 		if err != nil {
-			errorMsg := "error in read response body: " + err.Error()
+			errorMsg := "error in read response body6: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
@@ -420,7 +420,7 @@ func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerCo
 			err = req.Body.Close()
 		}()
 		if err != nil {
-			errorMsg := fmt.Errorf("error in read response body: %w", err).Error()
+			errorMsg := fmt.Errorf("error in read response body7: %w", err).Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
