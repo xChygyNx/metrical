@@ -34,10 +34,10 @@ type HostPort struct {
 type Config struct {
 	FileStoragePath string
 	DBAddress       string
+	Sha256Key       string
 	HostPort        HostPort
 	StoreInterval   int
 	Restore         bool
-	Sha256Key       string
 }
 
 func (hp *HostPort) String() string {
@@ -72,7 +72,6 @@ func (hp *HostPort) Set(value string) error {
 
 func parseFlag() *Config {
 	config := &Config{}
-	flag.Var(&config.HostPort, "a", "Net address host:port")
 	defaultStoreInterval := 300
 	defaultCryptoKey := ""
 

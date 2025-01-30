@@ -23,9 +23,9 @@ func checkHashSum(resp *http.Request) error {
 	bodyHashSum := sha256.Sum256(body)
 	hashSumStr := base64.StdEncoding.EncodeToString(bodyHashSum[:])
 	log.Printf("Hash sum from Response Body in agent: %s\n", hashSumStr)
-	if hashSum != string(hashSumStr[:]) {
+	if hashSum != hashSumStr {
 		return fmt.Errorf("error, didn't match hash sum: \n"+
-			"hash sum in header: %s\nbody hash sum: %s", hashSum, string(hashSumStr[:]))
+			"hash sum in header: %s\nbody hash sum: %s", hashSum, hashSumStr)
 	}
 	return nil
 }

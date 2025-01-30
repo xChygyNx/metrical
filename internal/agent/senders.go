@@ -59,7 +59,6 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		if config.Sha256Key != "" {
 			hashSum := sha256.Sum256(compressJSON)
 			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
-			log.Printf("HashSumStr: %s\n", hashSumStr)
 
 			req.Header.Set(encodingHeader, hashSumStr)
 		}
@@ -128,7 +127,6 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	if config.Sha256Key != "" {
 		hashSum := sha256.Sum256(compressJSON)
 		hashSumSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
-		log.Printf("HashSumStr: %s\n", hashSumSumStr)
 
 		req.Header.Set(encodingHeader, hashSumSumStr)
 	}
@@ -189,7 +187,6 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	if config.Sha256Key != "" {
 		hashSum := sha256.Sum256(compressJSON)
 		hashSumSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
-		log.Printf("HashSumStr: %s\n", hashSumSumStr)
 
 		req.Header.Set(encodingHeader, hashSumSumStr)
 	}
@@ -254,7 +251,6 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	if config.Sha256Key != "" {
 		hashSum := sha256.Sum256(compressJSON)
 		hashSumSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
-		log.Printf("HashSumStr: %s\n", hashSumSumStr)
 
 		req.Header.Set(encodingHeader, hashSumSumStr)
 	}
