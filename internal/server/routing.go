@@ -74,16 +74,16 @@ func Routing() (err error) {
 		}
 	}
 
-	syncInfo, err := GetSyncInfo(*config)
+	handlerConf, err := GetHandlerConf(config)
 	if err != nil {
-		return fmt.Errorf("error in GetSyncInfo: %w", err)
+		return fmt.Errorf("error in GetHandlerConf: %w", err)
 	}
 
-	if syncInfo.DB != nil {
+	if handlerConf.DB != nil {
 		defer func() {
-			err = syncInfo.DB.Close()
+			err = handlerConf.DB.Close()
 		}()
-	} else if syncInfo.DB == nil && !syncInfo.SyncFileRecord {
+	} else if handlerConf.DB == nil && !handlerConf.SyncFileRecord {
 		go func() {
 			err = fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
 		}()
@@ -92,21 +92,21 @@ func Routing() (err error) {
 	router := chi.NewRouter()
 	router.Use(GzipHandler)
 	router.Post("/update",
-		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(SaveMetricHandle(storage, handlerConf), sugar))
 	router.Post("/update/",
-		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(SaveMetricHandle(storage, handlerConf), sugar))
 	router.Post("/updates",
-		middlewareLogger(SaveBatchMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(SaveBatchMetricHandle(storage, handlerConf), sugar))
 	router.Post("/updates/",
-		middlewareLogger(SaveBatchMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(SaveBatchMetricHandle(storage, handlerConf), sugar))
 	router.Post("/update/{mType}/{metric}/{value}",
-		middlewareLogger(SaveMetricHandleOld(storage, syncInfo), sugar))
+		middlewareLogger(SaveMetricHandleOld(storage, handlerConf), sugar))
 	router.Get("/value/{mType}/{metric}",
 		middlewareLogger(GetMetricHandle(storage), sugar))
 	router.Post("/value",
-		middlewareLogger(GetJSONMetricHandle(storage), sugar))
+		middlewareLogger(GetJSONMetricHandle(storage, handlerConf), sugar))
 	router.Post("/value/",
-		middlewareLogger(GetJSONMetricHandle(storage), sugar))
+		middlewareLogger(GetJSONMetricHandle(storage, handlerConf), sugar))
 	router.Get("/ping", middlewareLogger(pingDBHandle(config.DBAddress), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 

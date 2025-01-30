@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,18 +16,22 @@ import (
 )
 
 const (
+	checkSumErrorMsg     = "error in checkHashSum:"
 	contentType          = "Content-Type"
 	contentTypeValue     = "application/json"
 	contentEncoding      = "Content-Encoding"
 	contentEncodingValue = "gzip"
 	countGaugeMetrics    = 28
+	encodingHeader       = "HashSHA256"
+	errorMsgWildcard     = "%s %w"
 	responseStatusMsg    = "response Status: "
 	responseHeadersMsg   = "response Headers: "
 	responseBodyMsg      = "response Body: "
 )
 
-func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
+func SendGauge(client *pester.Client, sendInfo map[string]float64, config *config) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
+		hostAddr := config.HostAddr
 		urlString := "http://" + hostAddr.String() + "/update"
 
 		sendJSON := types.Metrics{
@@ -50,6 +55,10 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 		}
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
+		if config.Sha256Key != "" {
+			checkSum := sha256.Sum256(compressJSON)
+			req.Header.Set(encodingHeader, string(checkSum[:]))
+		}
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -60,6 +69,12 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 
 		log.Println(responseStatusMsg, resp.Status)
 		log.Println(responseHeadersMsg, resp.Header)
+		if len(resp.Header.Values(encodingHeader)) != 0 {
+			err = checkHashSum(resp)
+			if err != nil {
+				return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
+			}
+		}
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("error in read response body: %w", err)
@@ -83,7 +98,8 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 	return
 }
 
-func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
+func SendCounter(client *pester.Client, pollCount int, config *config) (err error) {
+	hostAddr := config.HostAddr
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
 	sendJSON := types.Metrics{
@@ -105,6 +121,10 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	if config.Sha256Key != "" {
+		checkSum := sha256.Sum256(compressJSON)
+		req.Header.Set(encodingHeader, string(checkSum[:]))
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -115,6 +135,12 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
+	if len(resp.Header.Values(encodingHeader)) != 0 {
+		err = checkHashSum(resp)
+		if err != nil {
+			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
+		}
+	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return
@@ -123,8 +149,9 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 	return
 }
 
-func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
+func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *config) (err error) {
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
+	hostAddr := config.HostAddr
 	urlString := "http://" + hostAddr.String() + "/updates/"
 
 	for attr, value := range sendInfo {
@@ -152,6 +179,10 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	if config.Sha256Key != "" {
+		checkSum := sha256.Sum256(compressJSON)
+		req.Header.Set(encodingHeader, string(checkSum[:]))
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -162,6 +193,12 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
+	if len(resp.Header.Values(encodingHeader)) != 0 {
+		err = checkHashSum(resp)
+		if err != nil {
+			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
+		}
+	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("error in read response body: %w", err)
@@ -178,7 +215,8 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 	return
 }
 
-func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
+func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err error) {
+	hostAddr := config.HostAddr
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)
 	sendData := make([]types.Metrics, 0, 1)
@@ -203,6 +241,10 @@ func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	if config.Sha256Key != "" {
+		checkSum := sha256.Sum256(compressJSON)
+		req.Header.Set(encodingHeader, string(checkSum[:]))
+	}
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -213,6 +255,12 @@ func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
+	if len(resp.Header.Values(encodingHeader)) != 0 {
+		err = checkHashSum(resp)
+		if err != nil {
+			return fmt.Errorf(errorMsgWildcard, checkSumErrorMsg, err)
+		}
+	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return

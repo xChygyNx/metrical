@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -23,8 +24,10 @@ const (
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
 	internalServerErrorMsg = "Internal server error"
+	encodingHeader         = "HashSHA256"
 	errorMsgWildcard       = "%s %w"
 	jsonContentType        = "application/json"
+	notMatchedHashSumMsg   = "Didn't match hash sums "
 	retryDBWriteCount      = 4
 	retryFileWriteCount    = 4
 	textContentType        = "text/plain"
@@ -95,9 +98,17 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 	}
 }
 
-func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+func SaveMetricHandleOld(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
+
+		if handlerConf.Sha256Key != "" {
+			err := checkHashSum(req)
+			if err != nil {
+				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+				return
+			}
+		}
 
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
@@ -115,8 +126,8 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
-		if syncInfo.SyncFileRecord {
-			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
+		if handlerConf.SyncFileRecord {
+			err = retryFileWrite(handlerConf.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
 				log.Println(errorMsg)
@@ -136,9 +147,17 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 	}
 }
 
-func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
+
+		if handlerConf.Sha256Key != "" {
+			err := checkHashSum(req)
+			if err != nil {
+				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+				return
+			}
+		}
 
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
@@ -192,16 +211,16 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 			return
 		}
 
-		if syncInfo.DB != nil {
-			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
+		if handlerConf.DB != nil {
+			err = retryDBWrite(handlerConf.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
 				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
-		} else if syncInfo.SyncFileRecord {
-			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
+		} else if handlerConf.SyncFileRecord {
+			err = retryFileWrite(handlerConf.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
 				http.Error(res, errorMsg, http.StatusBadRequest)
@@ -217,6 +236,11 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 			return
 		}
 
+		if handlerConf.Sha256Key != "" {
+			checkSum := sha256.Sum256(encodedResponseData)
+			req.Header.Set(encodingHeader, string(checkSum[:]))
+		}
+
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(encodedResponseData)
 		if err != nil {
@@ -228,9 +252,17 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 	}
 }
 
-func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
+
+		if handlerConf.Sha256Key != "" {
+			err := checkHashSum(req)
+			if err != nil {
+				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+				return
+			}
+		}
 
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
@@ -277,16 +309,16 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 			}
 		}
 
-		if syncInfo.DB != nil {
-			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
+		if handlerConf.DB != nil {
+			err = retryDBWrite(handlerConf.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
 				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
 				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
 			}
-		} else if syncInfo.SyncFileRecord {
-			err = retryFileWrite(syncInfo.FileMetricStorage, storage, retryFileWriteCount)
+		} else if handlerConf.SyncFileRecord {
+			err = retryFileWrite(handlerConf.FileMetricStorage, storage, retryFileWriteCount)
 			if err != nil {
 				errorMsg := fmt.Errorf("failed to write metrics in file: %w", err).Error()
 				http.Error(res, errorMsg, http.StatusBadRequest)
@@ -300,6 +332,11 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
+		}
+
+		if handlerConf.Sha256Key != "" {
+			checkSum := sha256.Sum256(encodedResponseData)
+			req.Header.Set(encodingHeader, string(checkSum[:]))
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -365,9 +402,16 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
-func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
+		if handlerConf.Sha256Key != "" {
+			err := checkHashSum(req)
+			if err != nil {
+				http.Error(res, notMatchedHashSumMsg, http.StatusBadRequest)
+				return
+			}
+		}
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
 			err = req.Body.Close()
@@ -414,6 +458,12 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+
+		if handlerConf.Sha256Key != "" {
+			checkSum := sha256.Sum256(responseData)
+			req.Header.Set(encodingHeader, string(checkSum[:]))
+		}
+
 		res.WriteHeader(http.StatusOK)
 		_, err = res.Write(responseData)
 		if err != nil {
