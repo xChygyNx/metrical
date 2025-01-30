@@ -3,6 +3,7 @@ package agent
 import (
 	"bytes"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,8 +57,11 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
 		if config.Sha256Key != "" {
-			checkSum := sha256.Sum256(compressJSON)
-			req.Header.Set(encodingHeader, string(checkSum[:]))
+			hashSum := sha256.Sum256(compressJSON)
+			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+			log.Printf("HashSumStr: %s\n", hashSumStr)
+
+			req.Header.Set(encodingHeader, hashSumStr)
 		}
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
@@ -122,8 +126,11 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	if config.Sha256Key != "" {
-		checkSum := sha256.Sum256(compressJSON)
-		req.Header.Set(encodingHeader, string(checkSum[:]))
+		hashSum := sha256.Sum256(compressJSON)
+		hashSumSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+		log.Printf("HashSumStr: %s\n", hashSumSumStr)
+
+		req.Header.Set(encodingHeader, hashSumSumStr)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -180,8 +187,11 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	if config.Sha256Key != "" {
-		checkSum := sha256.Sum256(compressJSON)
-		req.Header.Set(encodingHeader, string(checkSum[:]))
+		hashSum := sha256.Sum256(compressJSON)
+		hashSumSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+		log.Printf("HashSumStr: %s\n", hashSumSumStr)
+
+		req.Header.Set(encodingHeader, hashSumSumStr)
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -242,8 +252,11 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	if config.Sha256Key != "" {
-		checkSum := sha256.Sum256(compressJSON)
-		req.Header.Set(encodingHeader, string(checkSum[:]))
+		hashSum := sha256.Sum256(compressJSON)
+		hashSumSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+		log.Printf("HashSumStr: %s\n", hashSumSumStr)
+
+		req.Header.Set(encodingHeader, hashSumSumStr)
 	}
 	resp, err := client.Do(req)
 	if err != nil {

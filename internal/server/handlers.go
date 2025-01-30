@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"database/sql"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -237,8 +238,9 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		}
 
 		if handlerConf.Sha256Key != "" {
-			checkSum := sha256.Sum256(encodedResponseData)
-			req.Header.Set(encodingHeader, string(checkSum[:]))
+			hashSum := sha256.Sum256(encodedResponseData)
+			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+			req.Header.Set(encodingHeader, hashSumStr)
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -335,8 +337,9 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 		}
 
 		if handlerConf.Sha256Key != "" {
-			checkSum := sha256.Sum256(encodedResponseData)
-			req.Header.Set(encodingHeader, string(checkSum[:]))
+			hashSum := sha256.Sum256(encodedResponseData)
+			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+			req.Header.Set(encodingHeader, hashSumStr)
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -460,8 +463,9 @@ func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerCo
 		}
 
 		if handlerConf.Sha256Key != "" {
-			checkSum := sha256.Sum256(responseData)
-			req.Header.Set(encodingHeader, string(checkSum[:]))
+			hashSum := sha256.Sum256(responseData)
+			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
+			req.Header.Set(encodingHeader, hashSumStr)
 		}
 
 		res.WriteHeader(http.StatusOK)
