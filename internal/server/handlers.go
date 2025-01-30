@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -164,7 +165,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		defer func() {
 			err = req.Body.Close()
 		}()
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := "error in read response body5: " + err.Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
@@ -270,7 +271,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 		defer func() {
 			err = req.Body.Close()
 		}()
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := "error in read response body6: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
@@ -419,7 +420,7 @@ func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerCo
 		defer func() {
 			err = req.Body.Close()
 		}()
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			errorMsg := fmt.Errorf("error in read response body7: %w", err).Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
