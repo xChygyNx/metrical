@@ -79,7 +79,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 			}
 		}
 		body, err := io.ReadAll(resp.Body)
-		if err != nil {
+		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("error in read response body: %w", err)
 		}
 		log.Println(responseBodyMsg, string(body))
@@ -207,7 +207,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 		}
 	}
 	body, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("error in read response body: %w", err)
 	}
 	log.Println(responseBodyMsg, string(body))
