@@ -44,7 +44,7 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 	return logFn
 }
 
-func Routing() error {
+func Routing() (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -74,8 +74,16 @@ func Routing() error {
 		}
 	}
 
-	syncInfo := GetSyncInfo(*config)
-	if !syncInfo.SyncFileRecord {
+	syncInfo, err := GetSyncInfo(*config)
+	if err != nil {
+		return fmt.Errorf("error in GetSyncInfo: %w", err)
+	}
+
+	if syncInfo.DB != nil {
+		defer func() {
+			err = syncInfo.DB.Close()
+		}()
+	} else if syncInfo.DB == nil && !syncInfo.SyncFileRecord {
 		go func() {
 			err = fileDump(config.FileStoragePath, time.Duration(config.StoreInterval)*time.Second, storage)
 		}()
@@ -87,6 +95,10 @@ func Routing() error {
 		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/",
 		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
+	router.Post("/updates",
+		middlewareLogger(SaveBatchMetricHandle(storage, syncInfo), sugar))
+	router.Post("/updates/",
+		middlewareLogger(SaveBatchMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/{mType}/{metric}/{value}",
 		middlewareLogger(SaveMetricHandleOld(storage, syncInfo), sugar))
 	router.Get("/value/{mType}/{metric}",
@@ -95,6 +107,7 @@ func Routing() error {
 		middlewareLogger(GetJSONMetricHandle(storage), sugar))
 	router.Post("/value/",
 		middlewareLogger(GetJSONMetricHandle(storage), sugar))
+	router.Get("/ping", middlewareLogger(pingDBHandle(config.DBAddress), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 
 	err = http.ListenAndServe(config.HostPort.String(), router)
