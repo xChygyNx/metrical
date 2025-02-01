@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -153,6 +154,8 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 
+		log.Printf("HandlerConfig.SHA256 in SaveMetricHandle: |%s|\n", handlerConf.Sha256Key)
+
 		if handlerConf.Sha256Key != "" {
 			err := checkHashSum(req)
 			if err != nil {
@@ -172,8 +175,16 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			return
 		}
 		var metricData types.Metrics
-
+		log.Printf("req.Body type: %T\n", req.Body)
+		log.Printf("BodyByte: %s\n", string(bodyByte))
+		res.Header().WriteSubset(os.Stdout, nil)
 		err = json.Unmarshal(bodyByte, &metricData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in unmarshaling bodyByte in SaveMetricHandle: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
 		metricName := metricData.ID
 		var responseData types.Metrics
 		switch metricData.MType {
@@ -280,6 +291,12 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
 
 		err = json.Unmarshal(bodyByte, &metricsData)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in unmarshaling bodyByte in SaveBatchMetricHandle: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
 		log.Printf("Unmarshalling metricsData: %v\n", metricsData)
 
 		for _, metricData := range metricsData {
@@ -511,12 +528,14 @@ func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		resWriter := w
 
+		log.Printf("Request headers in server: %s\n", req.Header)
 		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
 			gzipReader, err := types.NewGzipReader(req.Body)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
+			log.Println("Set gzipReader in req.Body")
 			req.Body = gzipReader
 			defer func() {
 				err := gzipReader.Close()

@@ -44,7 +44,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		if err != nil {
 			return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 		}
-
+		log.Printf("JsonString: %s\n", jsonString)
 		compressJSON, err := compress(jsonString)
 		if err != nil {
 			return fmt.Errorf("error in compress gauge metrics: %w", err)
@@ -62,6 +62,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 
 			req.Header.Set(encodingHeader, hashSumStr)
 		}
+		log.Printf("Agent send request with headers: %s\n", req.Header)
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -71,7 +72,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		}()
 
 		log.Println(responseStatusMsg, resp.Status)
-		log.Println(responseHeadersMsg, resp.Header)
+		log.Println(responseHeadersMsg, "1", resp.Header)
 		if len(resp.Header.Values(encodingHeader)) != 0 {
 			err = checkHashSum(resp)
 			if err != nil {
@@ -139,7 +140,7 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	}()
 
 	log.Println(responseStatusMsg, resp.Status)
-	log.Println(responseHeadersMsg, resp.Header)
+	log.Println(responseHeadersMsg, "2", resp.Header)
 	if len(resp.Header.Values(encodingHeader)) != 0 {
 		err = checkHashSum(resp)
 		if err != nil {
@@ -199,7 +200,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	}()
 
 	log.Println(responseStatusMsg, resp.Status)
-	log.Println(responseHeadersMsg, resp.Header)
+	log.Println(responseHeadersMsg, "3", resp.Header)
 	if len(resp.Header.Values(encodingHeader)) != 0 {
 		err = checkHashSum(resp)
 		if err != nil {
@@ -263,7 +264,7 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	}()
 
 	log.Println(responseStatusMsg, resp.Status)
-	log.Println(responseHeadersMsg, resp.Header)
+	log.Println(responseHeadersMsg, "4", resp.Header)
 	if len(resp.Header.Values(encodingHeader)) != 0 {
 		err = checkHashSum(resp)
 		if err != nil {
