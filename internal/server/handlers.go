@@ -280,7 +280,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		if syncInfo.DB != nil {
 			err = retryDBWrite(syncInfo.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
-				errorMsg := fmt.Errorf("failed to write metrics in DB: %w", err).Error()
+				errorMsg := fmt.Errorf("failed to  write metrics in DB: %w", err).Error()
 				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return
