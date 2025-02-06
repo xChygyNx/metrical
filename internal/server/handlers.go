@@ -153,6 +153,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, handlerConf *types.HandlerCo
 
 func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		log.Println("Enter SaveMetricHandle")
 		res.Header().Set(contentType, jsonContentType)
 
 		log.Printf("HandlerConfig.SHA256 in SaveMetricHandle: |%s|\n", handlerConf.Sha256Key)
@@ -196,8 +197,11 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		log.Printf("Metric name: %s, Metrice type: %s\n", metricName, metricData.MType)
 		switch metricData.MType {
 		case GAUGE:
+			log.Println("Set Gauge")
 			storage.SetGauge(metricName, *metricData.Value)
+			log.Println("Set Gauge Complete")
 			value, ok := storage.GetGauge(metricData.ID)
+			log.Printf("Get Gauge Complete. Value: %v, ok: %v\n", value, ok)
 			if !ok {
 				errorMsg := fmt.Sprintf("Value gauge metric %s don't saved", metricData.ID)
 				log.Println(errorMsg)
@@ -209,6 +213,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 				MType: metricData.MType,
 				Value: &value,
 			}
+			log.Printf("responseGata: %v\n", responseData)
 		case COUNTER:
 			storage.SetCounter(metricName, *metricData.Delta)
 			value, ok := storage.GetCounter(metricData.ID)
@@ -230,7 +235,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			http.Error(res, errorMsg, http.StatusBadRequest)
 			return
 		}
-
+		log.Printf("handlerConf.DB: %v\nhandlerConf.SyncFileRecord: %v\n", handlerConf.DB, handlerConf.SyncFileRecord)
 		if handlerConf.DB != nil {
 			err = retryDBWrite(handlerConf.DB, storage, retryDBWriteCount)
 			if err != nil && err.Error() != "sql: transaction has already been committed or rolled back" {
@@ -247,6 +252,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 				return
 			}
 		}
+		log.Println("Marshall responseData")
 
 		encodedResponseData, err := json.Marshal(responseData)
 		if err != nil {
@@ -256,6 +262,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			return
 		}
 
+		log.Println("Check header on IsAcceptEncoding")
 		if types.IsAcceptEncoding(req.Header) {
 			res.Header().Set(contentEncoding, contentEncodingValue)
 			if err != nil {
@@ -266,14 +273,19 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			}
 		}
 
+		log.Printf("handlerConf.Sha256Key: %v\n", handlerConf.Sha256Key)
 		if handlerConf.Sha256Key != "" {
 			hashSum := sha256.Sum256(encodedResponseData)
 			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
 			res.Header().Set(encodingHeader, hashSumStr)
 		}
 
+		log.Println("res.WriteHeader")
 		res.WriteHeader(http.StatusOK)
+		log.Println("res.WriteHeader Complete")
+		log.Printf("encodedResponseData: %v\n", encodedResponseData)
 		_, err = res.Write(encodedResponseData)
+		log.Println("res.Write Complete")
 		if err != nil {
 			errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
 			log.Println(errorMsg)
@@ -565,19 +577,21 @@ func GzipHandler(internal http.Handler) http.Handler {
 
 		log.Printf("Request headers in GzipHandler: %s\n", req.Header)
 		log.Printf("Internal in GzipHandler: %T\n", internal)
-		res, _ := io.ReadAll(req.Body)
-		defer func() {
-			err := req.Body.Close()
-			errorMsg := err.Error()
-			log.Println(errorMsg)
-			http.Error(w, internalServerErrorMsg, http.StatusInternalServerError)
-		}()
-
-		readCloser := io.NopCloser(bytes.NewBuffer(res))
+		//res, _ := io.ReadAll(req.Body)
+		//defer func() {
+		//	err := req.Body.Close()
+		//	errorMsg := err.Error()
+		//	log.Println(errorMsg)
+		//	http.Error(w, internalServerErrorMsg, http.StatusInternalServerError)
+		//}()
+		//
+		//readCloser := io.NopCloser(bytes.NewBuffer(res))
 
 		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
-			log.Printf("BodyByte in middle: %v\n", string(res))
-			gzipReader, err := types.NewGzipReader(readCloser)
+			//log.Printf("BodyByte in middle: %v\n", string(req.Body))
+			log.Println("NewGzipReader")
+			gzipReader, err := types.NewGzipReader(req.Body)
+			log.Println("Complete NewGzipReader")
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -594,13 +608,13 @@ func GzipHandler(internal http.Handler) http.Handler {
 				}
 			}()
 		}
-		log.Printf("type of req.Body in GzipHandler: %T\n", req.Body)
-		bodyInfo, err := io.ReadAll(req.Body)
-		if err != nil {
-			log.Printf("err in read body in GzipHandler: %v\n", err.Error())
-		}
+		//log.Printf("type of req.Body in GzipHandler: %T\n", req.Body)
+		//bodyInfo, err := io.ReadAll(req.Body)
+		//if err != nil {
+		//	log.Printf("err in read body in GzipHandler: %v\n", err.Error())
+		//}
+		//log.Printf("Read body in GzipReader after replacment request Body: %v\n", bodyInfo)
 
-		log.Printf("Read body in GzipReader after replacment request Body: %v\n", bodyInfo)
 		if types.IsAcceptEncoding(req.Header) {
 			writer := types.NewGzipWriter(w)
 			resWriter = writer
@@ -613,6 +627,8 @@ func GzipHandler(internal http.Handler) http.Handler {
 				}
 			}()
 		}
+		log.Printf("request Body type before exit GzipReader: %T\n", req.Body)
 		internal.ServeHTTP(resWriter, req)
+		log.Println("Internal ServeHTTP complete")
 	})
 }

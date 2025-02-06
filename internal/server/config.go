@@ -87,9 +87,9 @@ func parseFlag() *Config {
 		config.HostPort.Host = "localhost"
 		config.HostPort.Port = 8080
 	}
-	if config.DBAddress == "" {
-		config.DBAddress = "host=localhost user=admin password=Ftn34Der6 dbname=videos sslmode=disable"
-	}
+	//if config.DBAddress == "" {
+	//	config.DBAddress = "host=localhost user=admin password=Ftn34Der6 dbname=videos sslmode=disable"
+	//}
 	return config
 }
 

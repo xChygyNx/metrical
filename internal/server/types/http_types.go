@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -57,6 +58,7 @@ type GzipReader struct {
 
 func NewGzipReader(r io.ReadCloser) (*GzipReader, error) {
 	bodyRec, err := io.ReadAll(r)
+	log.Println("body read in NewGzipReader: ", string(bodyRec), err)
 	if err != nil {
 		return nil, fmt.Errorf("error in read body of request in GzipReader: %w", err)
 	}

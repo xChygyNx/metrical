@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/sethgrid/pester"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
@@ -27,7 +26,7 @@ const (
 	responseBodyMsg      = "response Body: "
 )
 
-func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
+func SendGauge(client *http.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		urlString := "http://" + hostAddr.String() + "/update"
 
@@ -92,9 +91,6 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 		if err != nil {
 			return fmt.Errorf("error in read response body2: %w", err)
 		}
-		defer func() {
-			err = body.Close()
-		}()
 
 		log.Println(responseBodyMsg, string(bodyData))
 		err = body.Close()
@@ -115,7 +111,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 	return
 }
 
-func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
+func SendCounter(client *http.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
 	sendJSON := types.Metrics{
