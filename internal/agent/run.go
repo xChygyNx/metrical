@@ -74,29 +74,29 @@ func Run() error {
 			sendInfo := prepareStatsForSend(&memStats)
 			client := getRetryClient()
 
-			err = SendGauge(client, sendInfo, config)
+			err = SendGauge(client, sendInfo, config.HostAddr)
 			if err != nil {
 				log.Printf("error in send gauge: %v\n", err)
 				continue
 			}
 
-			err = SendCounter(client, pollCount, config)
+			err = SendCounter(client, pollCount, config.HostAddr)
 			if err != nil {
 				log.Printf("error in send counter: %v\n", err)
 				continue
 			}
 
-			err = BatchSendGauge(client, sendInfo, config)
-			if err != nil {
-				log.Printf("error in batch send gauge: %v\n", err)
-				continue
-			}
-
-			err = BatchSendCounter(client, pollCount, config)
-			if err != nil {
-				log.Printf("error in batch send counter: %v\n", err)
-				continue
-			}
+			//err = BatchSendGauge(client, sendInfo, config)
+			//if err != nil {
+			//	log.Printf("error in batch send gauge: %v\n", err)
+			//	continue
+			//}
+			//
+			//err = BatchSendCounter(client, pollCount, config)
+			//if err != nil {
+			//	log.Printf("error in batch send counter: %v\n", err)
+			//	continue
+			//}
 
 			pollCount = 0
 		}

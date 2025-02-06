@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +23,8 @@ const (
 	GAUGE   = "gauge"
 	COUNTER = "counter"
 
+	contentEncoding        = "Content-Encoding"
+	contentEncodingValue   = "gzip"
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
 	internalServerErrorMsg = "Internal server error"
@@ -165,20 +166,25 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		}
 
 		bodyByte, err := io.ReadAll(req.Body)
-		defer func() {
-			err = req.Body.Close()
-		}()
-		if err != nil && !errors.Is(err, io.EOF) {
+		if err != nil {
 			errorMsg := "error in read response body5: " + err.Error()
 			fmt.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			err := req.Body.Close()
+			errorMsg := err.Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+		}()
+
 		var metricData types.Metrics
 		log.Printf("req.Body type: %T\n", req.Body)
 		log.Printf("BodyByte: %s\n", string(bodyByte))
 		res.Header().WriteSubset(os.Stdout, nil)
 		err = json.Unmarshal(bodyByte, &metricData)
+		log.Printf("Unmarshalling MetricData: %v\n", metricData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in unmarshaling bodyByte in SaveMetricHandle: %w", err).Error()
 			log.Println(errorMsg)
@@ -187,6 +193,7 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 		}
 		metricName := metricData.ID
 		var responseData types.Metrics
+		log.Printf("Metric name: %s, Metrice type: %s\n", metricName, metricData.MType)
 		switch metricData.MType {
 		case GAUGE:
 			storage.SetGauge(metricName, *metricData.Value)
@@ -249,10 +256,20 @@ func SaveMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerConf)
 			return
 		}
 
+		if types.IsAcceptEncoding(req.Header) {
+			res.Header().Set(contentEncoding, contentEncodingValue)
+			if err != nil {
+				errorMsg := "error in compress response data: " + err.Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		if handlerConf.Sha256Key != "" {
 			hashSum := sha256.Sum256(encodedResponseData)
 			hashSumStr := base64.StdEncoding.EncodeToString(hashSum[:])
-			req.Header.Set(encodingHeader, hashSumStr)
+			res.Header().Set(encodingHeader, hashSumStr)
 		}
 
 		res.WriteHeader(http.StatusOK)
@@ -279,17 +296,21 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 		}
 
 		bodyByte, err := io.ReadAll(req.Body)
-		defer func() {
-			err = req.Body.Close()
-		}()
-		if err != nil && !errors.Is(err, io.EOF) {
+
+		if err != nil {
 			errorMsg := "error in read response body6: " + err.Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
-		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
+		defer func() {
+			err := req.Body.Close()
+			errorMsg := err.Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+		}()
 
+		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
 		err = json.Unmarshal(bodyByte, &metricsData)
 		if err != nil {
 			errorMsg := fmt.Errorf("error in unmarshaling bodyByte in SaveBatchMetricHandle: %w", err).Error()
@@ -352,6 +373,16 @@ func SaveBatchMetricHandle(storage *types.MemStorage, handlerConf *types.Handler
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
+		}
+
+		if types.IsAcceptEncoding(req.Header) {
+			res.Header().Set(contentEncoding, contentEncodingValue)
+			if err != nil {
+				errorMsg := "error in compress response data: " + err.Error()
+				fmt.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
 		}
 
 		if handlerConf.Sha256Key != "" {
@@ -434,15 +465,19 @@ func GetJSONMetricHandle(storage *types.MemStorage, handlerConf *types.HandlerCo
 			}
 		}
 		bodyByte, err := io.ReadAll(req.Body)
-		defer func() {
-			err = req.Body.Close()
-		}()
-		if err != nil && !errors.Is(err, io.EOF) {
+
+		if err != nil {
 			errorMsg := fmt.Errorf("error in read response body7: %w", err).Error()
 			log.Println(errorMsg)
 			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 			return
 		}
+		defer func() {
+			err := req.Body.Close()
+			errorMsg := err.Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+		}()
 		var reqJSON types.Metrics
 
 		requestDecoder := json.NewDecoder(bytes.NewBuffer(bodyByte))
@@ -528,9 +563,21 @@ func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		resWriter := w
 
-		log.Printf("Request headers in server: %s\n", req.Header)
+		log.Printf("Request headers in GzipHandler: %s\n", req.Header)
+		log.Printf("Internal in GzipHandler: %T\n", internal)
+		res, _ := io.ReadAll(req.Body)
+		defer func() {
+			err := req.Body.Close()
+			errorMsg := err.Error()
+			log.Println(errorMsg)
+			http.Error(w, internalServerErrorMsg, http.StatusInternalServerError)
+		}()
+
+		readCloser := io.NopCloser(bytes.NewBuffer(res))
+
 		if types.IsCompressData(req.Header) && types.IsContentEncoding(req.Header) {
-			gzipReader, err := types.NewGzipReader(req.Body)
+			log.Printf("BodyByte in middle: %v\n", string(res))
+			gzipReader, err := types.NewGzipReader(readCloser)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
@@ -547,6 +594,13 @@ func GzipHandler(internal http.Handler) http.Handler {
 				}
 			}()
 		}
+		log.Printf("type of req.Body in GzipHandler: %T\n", req.Body)
+		bodyInfo, err := io.ReadAll(req.Body)
+		if err != nil {
+			log.Printf("err in read body in GzipHandler: %v\n", err.Error())
+		}
+
+		log.Printf("Read body in GzipReader after replacment request Body: %v\n", bodyInfo)
 		if types.IsAcceptEncoding(req.Header) {
 			writer := types.NewGzipWriter(w)
 			resWriter = writer

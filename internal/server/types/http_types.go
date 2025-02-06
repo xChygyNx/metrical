@@ -3,7 +3,6 @@ package types
 import (
 	"bytes"
 	"compress/gzip"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -51,43 +50,43 @@ func (gw *gzipWriter) Close() error {
 	return err
 }
 
-type gzipReader struct {
+type GzipReader struct {
 	io.ReadCloser
-	reader *gzip.Reader
+	Reader *gzip.Reader
 }
 
-func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
+func NewGzipReader(r io.ReadCloser) (*GzipReader, error) {
 	bodyRec, err := io.ReadAll(r)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("error in read body of request in gzipReader: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("error in read body of request in GzipReader: %w", err)
 	}
 	gr, err := gzip.NewReader(bytes.NewBuffer(bodyRec))
 	if err != nil {
-		return nil, fmt.Errorf("error in create gzipReader: %w", err)
+		return nil, fmt.Errorf("error in create GzipReader: %w", err)
 	}
 
-	return &gzipReader{
+	return &GzipReader{
 		ReadCloser: r,
-		reader:     gr,
+		Reader:     gr,
 	}, nil
 }
 
-func (gr *gzipReader) Read(p []byte) (int, error) {
-	n, err := gr.reader.Read(p)
+func (gr *GzipReader) Read(p []byte) (int, error) {
+	n, err := gr.Reader.Read(p)
 	if err != nil {
 		return 0, fmt.Errorf("error in read of Gzip Reader: %w", err)
 	}
 	return n, nil
 }
 
-func (gr *gzipReader) Close() error {
+func (gr *GzipReader) Close() error {
 	err := gr.ReadCloser.Close()
 	if err != nil {
-		return fmt.Errorf("error in close gzipReader: %w", err)
+		return fmt.Errorf("error in close GzipReader: %w", err)
 	}
-	err = gr.reader.Close()
+	err = gr.Reader.Close()
 	if err != nil {
-		err = fmt.Errorf("error in close gzipReader: %w", err)
+		err = fmt.Errorf("error in close GzipReader: %w", err)
 	}
 	return err
 }
