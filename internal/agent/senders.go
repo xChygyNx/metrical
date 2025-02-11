@@ -11,6 +11,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"runtime"
+	"strings"
 
 	"github.com/sethgrid/pester"
 	"github.com/xChygyNx/metrical/internal/server/types"
@@ -28,6 +30,22 @@ const (
 	responseBodyMsg      = "response Body: "
 )
 
+func getFuncName() string {
+	pc, _, _, ok := runtime.Caller(1)
+	if !ok {
+		return ""
+	}
+	fullFuncName := runtime.FuncForPC(pc).Name()
+	funcName := fullFuncName[strings.LastIndex(fullFuncName, ".")+1:]
+	return funcName
+}
+
+func hashSendData(data []byte) string {
+	hashSum := sha256.Sum256(data)
+	dataHash := base64.StdEncoding.EncodeToString(hashSum[:])
+	return dataHash
+}
+
 func SendGauge(client *pester.Client, sendInfo map[string]float64, config *config) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		hostAddr := config.HostAddr
@@ -40,7 +58,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		}
 		jsonString, err := json.Marshal(sendJSON)
 		if err != nil {
-			return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
+			return fmt.Errorf("error in serialize json for send gauge metric in %s: %w", getFuncName(), err)
 		}
 
 		compressJSON, err := compress(jsonString)
@@ -50,25 +68,24 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 
 		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(compressJSON))
 		if err != nil {
-			return fmt.Errorf("failed to create http Request: %w", err)
+			return fmt.Errorf("failed to create http Request in SendGauge: %w", err)
 		}
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
 		if config.Sha256Key != "" {
-			hashSum := sha256.Sum256(jsonString)
-			hashHeader := base64.StdEncoding.EncodeToString(hashSum[:])
-			req.Header.Set(hashHeader, hashHeader)
+			req.Header.Set(hashHeader, hashSendData(jsonString))
 		}
+
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
-			return fmt.Errorf("failed to send http Request by http Client: %w", err)
+			return fmt.Errorf("failed to send http Request by http Client in %s: %w", getFuncName(), err)
 		}
 
 		log.Println(responseStatusMsg, resp.Status)
 		log.Println(responseHeadersMsg, resp.Header)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("error in read response body: %w", err)
+			return fmt.Errorf("error in read response body in SendGauge: %w", err)
 		}
 
 		defer func() {
@@ -111,29 +128,48 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	if err != nil {
 		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
+
 	compressJSON, err := compress(jsonString)
 	if err != nil {
 		return fmt.Errorf("error in compress counter metrics: %w", err)
 	}
+
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(compressJSON))
 	if err != nil {
-		return
+		return fmt.Errorf("failed to create http Request in SendCounter: %w", err)
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
-	resp, err := client.Do(req)
-	if err != nil {
-		return
+	if config.Sha256Key != "" {
+		req.Header.Set(hashHeader, hashSendData(jsonString))
 	}
-	defer func() {
-		err = resp.Body.Close()
-	}()
+
+	resp, err := client.Do(req)
+	if err != nil && !errors.Is(err, io.EOF) {
+		return fmt.Errorf("failed to send http Request by http Client in SendCounter: %w", err)
+	}
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return fmt.Errorf("error in read response body in SendCounter: %w", err)
+	}
+
+	defer func() {
+		err = resp.Body.Close()
+	}()
+	err = checkHashSum(resp)
+	if err != nil {
+		return fmt.Errorf("error CheckHashSum in SendCounter: %w\n", err)
+	}
+
+	if len(resp.Header.Values(contentEncoding)) > 0 &&
+		resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
+		body, err = decompress(body)
+		if err != nil {
+			return fmt.Errorf("error of decompress response body in SendCounter: %w\n", err)
+		}
 	}
 	log.Println(responseBodyMsg, string(body))
 	return
@@ -155,33 +191,35 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 
 	jsonString, err := json.Marshal(sendData)
 	if err != nil {
-		return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
+		return fmt.Errorf("error in serialize json for batch send gauge metric: %w", err)
 	}
 
 	compressJSON, err := compress(jsonString)
 	if err != nil {
-		return fmt.Errorf("error in compress gauge metrics: %w", err)
+		return fmt.Errorf("error in compress batch gauge metrics: %w", err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(compressJSON))
 	if err != nil {
-		return fmt.Errorf("failed to create http Request: %w", err)
+		return fmt.Errorf("failed to create http Request in BatchSendGauge: %w", err)
 	}
+
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	if config.Sha256Key != "" {
+		req.Header.Set(hashHeader, hashSendData(jsonString))
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send http Request by http Client: %w", err)
+		return fmt.Errorf("failed to send http Request by http Client in BatchSendGauge: %w", err)
 	}
-	defer func() {
-		err = resp.Body.Close()
-	}()
 
 	log.Println(responseStatusMsg, resp.Status)
 	log.Println(responseHeadersMsg, resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("error in read response body: %w", err)
+		return fmt.Errorf("error in read response body in BatchSendGauge: %w", err)
 	}
 	log.Println(responseBodyMsg, string(body))
 	err = resp.Body.Close()
@@ -191,6 +229,20 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 			return fmt.Errorf("error in copy text of error in stdout: %w", err)
 		}
 	}
+
+	err = checkHashSum(resp)
+	if err != nil {
+		return fmt.Errorf("error CheckHashSum in BatchSendGauge: %w\n", err)
+	}
+
+	if len(resp.Header.Values(contentEncoding)) > 0 &&
+		resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
+		body, err = decompress(body)
+		if err != nil {
+			return fmt.Errorf("error of decompress response body in BatchSendGauge: %w\n", err)
+		}
+	}
+	log.Println(responseBodyMsg, string(body))
 
 	return
 }
@@ -211,19 +263,21 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	if err != nil {
 		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
+
 	compressJSON, err := compress(jsonString)
 	if err != nil {
 		return fmt.Errorf("error in compress counter metrics: %w", err)
 	}
+
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(compressJSON))
 	if err != nil {
-		return
+		return fmt.Errorf("failed to create http Request in BatchSendCounter: %w", err)
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	resp, err := client.Do(req)
 	if err != nil {
-		return
+		return fmt.Errorf("failed to send http Request by http Client in %s: %w", getFuncName(), err)
 	}
 	defer func() {
 		err = resp.Body.Close()
@@ -233,8 +287,25 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	log.Println(responseHeadersMsg, resp.Header)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return
+		return fmt.Errorf("error in read response body in BatchSendCounter: %w", err)
 	}
+
+	defer func() {
+		err = resp.Body.Close()
+	}()
+	err = checkHashSum(resp)
+	if err != nil {
+		return fmt.Errorf("error CheckHashSum in BatchSendCounter: %w\n", err)
+	}
+
+	if len(resp.Header.Values(contentEncoding)) > 0 &&
+		resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
+		body, err = decompress(body)
+		if err != nil {
+			return fmt.Errorf("error of decompress response body in BatchSendCounter: %w\n", err)
+		}
+	}
+
 	log.Println(responseBodyMsg, string(body))
 	return
 }

@@ -34,6 +34,7 @@ type HostPort struct {
 type Config struct {
 	FileStoragePath string
 	DBAddress       string
+	Sha256Key       string
 	HostPort        HostPort
 	StoreInterval   int
 	Restore         bool
@@ -70,13 +71,15 @@ func (hp *HostPort) Set(value string) error {
 }
 
 func parseFlag() *Config {
-	config := &Config{}
+	config := new(Config)
 	flag.Var(&config.HostPort, "a", "Net address host:port")
-	defaultStoreInterval := 300
+	const defaultStoreInterval = 300
+	const defaultCryptoKey = ""
 	flag.IntVar(&config.StoreInterval, "i", defaultStoreInterval, "Time period for store metrics in the file")
 	flag.StringVar(&config.FileStoragePath, "f", "", "File path for store metrics")
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
 	flag.StringVar(&config.DBAddress, "d", "", "Address of connecting to Data Base")
+	flag.StringVar(&config.Sha256Key, "k", defaultCryptoKey, "Crypto key for decoding received data")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
@@ -126,6 +129,11 @@ func GetConfig() (*Config, error) {
 		config.DBAddress = dBAddress
 	}
 
+	cryptoKey, ok := os.LookupEnv("KEY")
+	if ok {
+		config.Sha256Key = cryptoKey
+	}
+
 	return config, nil
 }
 
@@ -153,7 +161,7 @@ func createMetricDB(connectInfo string) (*sql.DB, error) {
 	return db, nil
 }
 
-func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
+func GetHandlerConfig(conf Config) (*types.HandlerConfig, error) {
 	var db *sql.DB
 	var err error
 	if conf.DBAddress != "" {
@@ -162,7 +170,7 @@ func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
 			return nil, fmt.Errorf("error in create Metric Data Base: %w", err)
 		}
 	}
-	return &types.SyncInfo{
+	return &types.HandlerConfig{
 		DB:                db,
 		FileMetricStorage: conf.FileStoragePath,
 		SyncFileRecord:    conf.StoreInterval == 0,

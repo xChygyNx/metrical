@@ -17,13 +17,14 @@ type MemStorage struct {
 	Counters map[string]counter `json:"counters"`
 }
 
-type SyncInfo struct {
+type HandlerConfig struct {
 	DB                *sql.DB
 	FileMetricStorage string
+	Sha256Key         string
 	SyncFileRecord    bool
 }
 
-func (s *SyncInfo) CheckBDConnection() error {
+func (s *HandlerConfig) CheckBDConnection() error {
 	err := s.DB.PingContext(context.Background())
 	return fmt.Errorf("DB is unreachable: %w", err)
 }
