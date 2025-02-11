@@ -73,7 +73,10 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
 		if config.Sha256Key != "" {
-			req.Header.Set(hashHeader, hashSendData(jsonString))
+			hash := hashSendData(jsonString)
+			log.Printf("Agent hash data in SendGauge: %s", jsonString)
+			log.Printf("Agent set hash in header in SendGauge: %s", hash)
+			req.Header.Set(hashHeader, hash)
 		}
 
 		resp, err := client.Do(req)
@@ -141,7 +144,10 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	if config.Sha256Key != "" {
-		req.Header.Set(hashHeader, hashSendData(jsonString))
+		hash := hashSendData(jsonString)
+		log.Printf("Agent hash data in SendCounter: %s", jsonString)
+		log.Printf("Agent set hash in header in SendCounter: %s", hash)
+		req.Header.Set(hashHeader, hash)
 	}
 
 	resp, err := client.Do(req)
@@ -207,7 +213,10 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	if config.Sha256Key != "" {
-		req.Header.Set(hashHeader, hashSendData(jsonString))
+		hash := hashSendData(jsonString)
+		log.Printf("Agent hash data in BatchSendGauge: %s", jsonString)
+		log.Printf("Agent set hash in header in BatchSendGauge: %s", hash)
+		req.Header.Set(hashHeader, hash)
 	}
 
 	resp, err := client.Do(req)
@@ -273,8 +282,16 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	if err != nil {
 		return fmt.Errorf("failed to create http Request in BatchSendCounter: %w", err)
 	}
+
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	if config.Sha256Key != "" {
+		hash := hashSendData(jsonString)
+		log.Printf("Agent hash data in BatchSendGauge: %s", jsonString)
+		log.Printf("Agent set hash in header in BatchSendGauge: %s", hash)
+		req.Header.Set(hashHeader, hash)
+	}
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send http Request by http Client in %s: %w", getFuncName(), err)

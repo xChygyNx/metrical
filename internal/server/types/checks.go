@@ -47,6 +47,7 @@ func IsCompressData(headers http.Header) bool {
 }
 
 func CheckHashSum(resp *http.Request) (err error) {
+	log.Printf("ChechHashSum in server. Request Headers: %v", resp.Header)
 	if len(resp.Header.Values(hashHeader)) > 0 {
 		headerHashSum := resp.Header.Values(hashHeader)[0]
 		log.Printf("Sever response hashSum from header: %v\n", headerHashSum)
