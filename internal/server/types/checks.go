@@ -49,10 +49,10 @@ func IsCompressData(headers http.Header) bool {
 func CheckHashSum(resp *http.Request) (err error) {
 	if len(resp.Header.Values(hashHeader)) > 0 {
 		headerHashSum := resp.Header.Values(hashHeader)[0]
-		log.Printf("Agent response hashSum from header: %v\n", headerHashSum)
+		log.Printf("Sever response hashSum from header: %v\n", headerHashSum)
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("error in read response Body in agent: %w", err)
+			return fmt.Errorf("error in read response Body in server: %w", err)
 		}
 		defer func() {
 			err = resp.Body.Close()
@@ -61,8 +61,10 @@ func CheckHashSum(resp *http.Request) (err error) {
 		bodyHashSumBytes := sha256.Sum256(body)
 		bodyHashSumStr := base64.StdEncoding.EncodeToString(bodyHashSumBytes[:])
 
-		log.Printf("Agent response hashSum from body: %v\n", bodyHashSumStr)
+		log.Printf("Server response hashSum from body: %v\n", bodyHashSumStr)
 		if headerHashSum != bodyHashSumStr {
+			log.Printf("not match hash sum of response body and hash sum from header in server\n"+
+				"%s\n%s", headerHashSum, bodyHashSumStr)
 			return errors.New("not match hash sum of response body and hash sum from header in agent")
 		}
 	}

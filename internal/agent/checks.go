@@ -32,6 +32,8 @@ func checkHashSum(resp *http.Response) (err error) {
 
 		log.Printf("Agent response hashSum from body: %v\n", bodyHashSumStr)
 		if headerHashSum != bodyHashSumStr {
+			log.Printf("not match hash sum of response body and hash sum from header in server\n"+
+				"%s\n%s", headerHashSum, bodyHashSumStr)
 			return errors.New("not match hash sum of response body and hash sum from header in agent")
 		}
 	}
