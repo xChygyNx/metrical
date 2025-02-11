@@ -93,14 +93,14 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		}()
 		err = checkHashSum(resp)
 		if err != nil {
-			return fmt.Errorf("error CheckHashSum in SendGauge: %w\n", err)
+			return fmt.Errorf("error CheckHashSum in SendGauge: %w", err)
 		}
 
 		if len(resp.Header.Values(contentEncoding)) > 0 &&
 			resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
 			body, err = decompress(body)
 			if err != nil {
-				return fmt.Errorf("error of decompress response body in SendGauge: %w\n", err)
+				return fmt.Errorf("error of decompress response body in SendGauge: %w", err)
 			}
 		}
 		log.Println(responseBodyMsg, string(body))
@@ -161,14 +161,14 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	}()
 	err = checkHashSum(resp)
 	if err != nil {
-		return fmt.Errorf("error CheckHashSum in SendCounter: %w\n", err)
+		return fmt.Errorf("error CheckHashSum in SendCounter: %w", err)
 	}
 
 	if len(resp.Header.Values(contentEncoding)) > 0 &&
 		resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
 		body, err = decompress(body)
 		if err != nil {
-			return fmt.Errorf("error of decompress response body in SendCounter: %w\n", err)
+			return fmt.Errorf("error of decompress response body in SendCounter: %w", err)
 		}
 	}
 	log.Println(responseBodyMsg, string(body))
@@ -232,14 +232,14 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 
 	err = checkHashSum(resp)
 	if err != nil {
-		return fmt.Errorf("error CheckHashSum in BatchSendGauge: %w\n", err)
+		return fmt.Errorf("error CheckHashSum in BatchSendGauge: %w", err)
 	}
 
 	if len(resp.Header.Values(contentEncoding)) > 0 &&
 		resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
 		body, err = decompress(body)
 		if err != nil {
-			return fmt.Errorf("error of decompress response body in BatchSendGauge: %w\n", err)
+			return fmt.Errorf("error of decompress response body in BatchSendGauge: %w", err)
 		}
 	}
 	log.Println(responseBodyMsg, string(body))
@@ -295,14 +295,14 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err
 	}()
 	err = checkHashSum(resp)
 	if err != nil {
-		return fmt.Errorf("error CheckHashSum in BatchSendCounter: %w\n", err)
+		return fmt.Errorf("error CheckHashSum in BatchSendCounter: %w", err)
 	}
 
 	if len(resp.Header.Values(contentEncoding)) > 0 &&
 		resp.Header.Values(contentEncoding)[0] == contentEncodingValue {
 		body, err = decompress(body)
 		if err != nil {
-			return fmt.Errorf("error of decompress response body in BatchSendCounter: %w\n", err)
+			return fmt.Errorf("error of decompress response body in BatchSendCounter: %w", err)
 		}
 	}
 

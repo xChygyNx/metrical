@@ -27,7 +27,7 @@ func compress(data []byte) (res []byte, err error) {
 func decompress(data []byte) (res []byte, err error) {
 	reader, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
-		return nil, fmt.Errorf("error in create gzipReader in decompress: %w\n", err)
+		return nil, fmt.Errorf("error in create gzipReader in decompress: %w", err)
 	}
 	defer func() {
 		err = reader.Close()
@@ -36,7 +36,7 @@ func decompress(data []byte) (res []byte, err error) {
 	var buf bytes.Buffer
 	_, err = buf.ReadFrom(reader)
 	if err != nil {
-		return nil, fmt.Errorf("error in read data from gzipReader in decompress: %w\n", err)
+		return nil, fmt.Errorf("error in read data from gzipReader in decompress: %w", err)
 	}
 	return buf.Bytes(), nil
 }

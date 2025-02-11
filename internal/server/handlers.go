@@ -176,6 +176,7 @@ func SaveMetricHandle(storage *types.MemStorage, config *types.HandlerConfig) ht
 		if err != nil {
 			errorMsg := fmt.Sprintf("Not match hash sum in %v", getFuncName())
 			http.Error(res, errorMsg, http.StatusBadRequest)
+			return
 		}
 
 		var metricData types.Metrics
@@ -279,6 +280,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, config *types.HandlerConfi
 		if err != nil {
 			errorMsg := fmt.Sprintf("Not match hash sum in %v", getFuncName())
 			http.Error(res, errorMsg, http.StatusBadRequest)
+			return
 		}
 
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)

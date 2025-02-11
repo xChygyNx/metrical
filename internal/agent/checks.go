@@ -3,6 +3,7 @@ package agent
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -31,7 +32,7 @@ func checkHashSum(resp *http.Response) (err error) {
 
 		log.Printf("Agent response hashSum from body: %v\n", bodyHashSumStr)
 		if headerHashSum != bodyHashSumStr {
-			return fmt.Errorf("not match hash sum of response body and hash sum from header in agent\n")
+			return errors.New("not match hash sum of response body and hash sum from header in agent")
 		}
 	}
 	return

@@ -161,7 +161,7 @@ func createMetricDB(connectInfo string) (*sql.DB, error) {
 	return db, nil
 }
 
-func GetHandlerConfig(conf Config) (*types.HandlerConfig, error) {
+func GetHandlerConfig(conf *Config) (*types.HandlerConfig, error) {
 	var db *sql.DB
 	var err error
 	if conf.DBAddress != "" {
