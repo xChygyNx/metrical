@@ -172,7 +172,7 @@ func SaveMetricHandle(storage *types.MemStorage, config *types.HandlerConfig) ht
 			return
 		}
 
-		err = types.CheckHashSum(req)
+		err = types.CheckHashSum(req, bodyByte)
 		if err != nil {
 			errorMsg := fmt.Sprintf("Not match hash sum in %v", getFuncName())
 			http.Error(res, errorMsg, http.StatusBadRequest)
@@ -276,7 +276,7 @@ func SaveBatchMetricHandle(storage *types.MemStorage, config *types.HandlerConfi
 			return
 		}
 
-		err = types.CheckHashSum(req)
+		err = types.CheckHashSum(req, bodyByte)
 		if err != nil {
 			errorMsg := fmt.Sprintf("Not match hash sum in %v", getFuncName())
 			http.Error(res, errorMsg, http.StatusBadRequest)
