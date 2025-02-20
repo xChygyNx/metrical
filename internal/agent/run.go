@@ -20,9 +20,9 @@ type myChannel[T map[string]float64 | bool] struct {
 	mutex  sync.Mutex
 }
 
-func newMyChannel[T map[string]float64 | bool](cap int) *myChannel[T] {
+func newMyChannel[T map[string]float64 | bool](capacity int) *myChannel[T] {
 	return &myChannel[T]{
-		C: make(chan T, cap),
+		C: make(chan T, capacity),
 	}
 }
 

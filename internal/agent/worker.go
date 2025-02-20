@@ -2,13 +2,17 @@ package agent
 
 import (
 	"fmt"
-	"github.com/sethgrid/pester"
 	"log"
 	"math/rand"
 	"runtime"
 
+	"github.com/sethgrid/pester"
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
+)
+
+const (
+	sendCloseChannelMsg = "Send response report in closed channel"
 )
 
 func prepareMemStatsForSend(stats *runtime.MemStats) map[string]float64 {
@@ -60,9 +64,9 @@ func getGoPsutilStats() (map[string]float64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error in get cpuStats: %w", err)
 	}
-	for i, cpuStats := range infoStats {
+	for i := range infoStats {
 		key := fmt.Sprintf("CPUutilization%d", i+1)
-		result[key] = float64(cpuStats.CPU)
+		result[key] = float64(infoStats[i].CPU)
 	}
 
 	return result, nil
@@ -144,7 +148,7 @@ func (w *Worker) collectSendMetrics() {
 				log.Printf("error in send gauge: %v\n", err)
 				err := w.responseReportCh.send(false)
 				if err != nil {
-					log.Println("Send response report in closed channel")
+					log.Println(sendCloseChannelMsg)
 					continueWork = false
 				}
 				break
@@ -155,7 +159,7 @@ func (w *Worker) collectSendMetrics() {
 				log.Printf("error in send counter: %v\n", err)
 				err := w.responseReportCh.send(false)
 				if err != nil {
-					log.Println("Send response report in closed channel")
+					log.Println(sendCloseChannelMsg)
 					continueWork = false
 				}
 				break
@@ -166,7 +170,7 @@ func (w *Worker) collectSendMetrics() {
 				log.Printf("error in batch send gauge: %v\n", err)
 				err := w.responseReportCh.send(false)
 				if err != nil {
-					log.Println("Send response report in closed channel")
+					log.Println(sendCloseChannelMsg)
 					continueWork = false
 				}
 				break
@@ -177,7 +181,7 @@ func (w *Worker) collectSendMetrics() {
 				log.Printf("error in batch send counter: %v\n", err)
 				err := w.responseReportCh.send(false)
 				if err != nil {
-					log.Println("Send response report in closed channel")
+					log.Println(sendCloseChannelMsg)
 					continueWork = false
 				}
 				break
@@ -185,7 +189,7 @@ func (w *Worker) collectSendMetrics() {
 
 			err = w.responseReportCh.send(true)
 			if err != nil {
-				log.Println("Send response report in closed channel")
+				log.Println(sendCloseChannelMsg)
 				continueWork = false
 			}
 		case <-w.doneCh:
