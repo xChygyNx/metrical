@@ -1,9 +1,9 @@
 package agent
 
 import (
+	"errors"
 	"log"
-	"math/rand"
-	"runtime"
+	"sync"
 	"time"
 
 	"github.com/sethgrid/pester"
@@ -13,6 +13,41 @@ const (
 	countRetries = 3
 )
 
+type myChannel[T map[string]float64 | bool] struct {
+	C      chan T
+	closed bool
+	once   sync.Once
+	mutex  sync.Mutex
+}
+
+func newMyChannel[T map[string]float64 | bool](cap int) *myChannel[T] {
+	return &myChannel[T]{
+		C: make(chan T, cap),
+	}
+}
+
+func (mc *myChannel[T]) close() {
+	mc.once.Do(func() {
+		mc.closed = true
+		close(mc.C)
+	})
+}
+
+func (mc *myChannel[T]) send(data T) error {
+	if !mc.closed {
+		mc.mutex.Lock()
+		defer mc.mutex.Unlock()
+		mc.C <- data
+		return nil
+	}
+	return errors.New("channel is closed")
+}
+
+func (mc *myChannel[T]) get() (T, bool) {
+	data, ok := <-mc.C
+	return data, ok
+}
+
 func getRetryClient() *pester.Client {
 	client := pester.New()
 	client.MaxRetries = countRetries
@@ -20,44 +55,9 @@ func getRetryClient() *pester.Client {
 	return client
 }
 
-func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
-	result := make(map[string]float64)
-
-	result["Alloc"] = float64(stats.Alloc)
-	result["BuckHashSys"] = float64(stats.BuckHashSys)
-	result["Frees"] = float64(stats.Frees)
-	result["GCCPUFraction"] = float64(stats.GCCPUFraction)
-	result["GCSys"] = float64(stats.GCSys)
-	result["HeapAlloc"] = float64(stats.HeapAlloc)
-	result["HeapIdle"] = float64(stats.HeapIdle)
-	result["HeapInuse"] = float64(stats.HeapInuse)
-	result["HeapObjects"] = float64(stats.HeapObjects)
-	result["HeapReleased"] = float64(stats.HeapReleased)
-	result["HeapSys"] = float64(stats.HeapSys)
-	result["LastGC"] = float64(stats.LastGC)
-	result["Lookups"] = float64(stats.Lookups)
-	result["MCacheInuse"] = float64(stats.MCacheInuse)
-	result["MCacheSys"] = float64(stats.MCacheSys)
-	result["MSpanInuse"] = float64(stats.MSpanInuse)
-	result["MSpanSys"] = float64(stats.MSpanSys)
-	result["Mallocs"] = float64(stats.Mallocs)
-	result["NextGC"] = float64(stats.NextGC)
-	result["NumForcedGC"] = float64(stats.NumForcedGC)
-	result["NumGC"] = float64(stats.NumGC)
-	result["OtherSys"] = float64(stats.OtherSys)
-	result["PauseTotalNs"] = float64(stats.PauseTotalNs)
-	result["StackInuse"] = float64(stats.StackInuse)
-	result["StackSys"] = float64(stats.StackSys)
-	result["Sys"] = float64(stats.Sys)
-	result["TotalAlloc"] = float64(stats.TotalAlloc)
-	result["RandomValue"] = rand.Float64()
-
-	return result
-}
-
 func Run() error {
 	var pollCount int
-	var memStats runtime.MemStats
+	var sendInfo map[string]float64
 
 	config, err := GetConfig()
 	if err != nil {
@@ -65,40 +65,41 @@ func Run() error {
 	}
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
-	for {
+	client := getRetryClient()
+	collectJobCh := make(chan struct{})
+	doneCh := make(chan struct{})
+	reportJobCh := make(chan map[string]float64)
+	collectOutCh := newMyChannel[map[string]float64](1)
+	responseReportCh := newMyChannel[bool](1)
+
+	defer close(doneCh)
+
+	for i := 0; i < config.RateLimit; i++ {
+		worker := newWorker(i+1, client, collectJobCh, reportJobCh, collectOutCh, responseReportCh, doneCh, config)
+		go worker.collectSendMetrics()
+	}
+	interrupt := false
+	for !interrupt {
 		select {
 		case <-pollTicker.C:
-			runtime.ReadMemStats(&memStats)
+			collectJobCh <- struct{}{}
+			sendInfo = <-reportJobCh
 			pollCount++
+			sendInfo["PollCounter"] = float64(pollCount)
 		case <-reportTicker.C:
-			sendInfo := prepareStatsForSend(&memStats)
-			client := getRetryClient()
+			reportJobCh <- sendInfo
 
-			err = SendGauge(client, sendInfo, config)
-			if err != nil {
-				log.Printf("error in send gauge: %v\n", err)
-				continue
+			successSend, ok := responseReportCh.get()
+			if !ok {
+				log.Println("Response report Channel is closed")
+				interrupt = true
+				break
 			}
-
-			err = SendCounter(client, pollCount, config)
-			if err != nil {
-				log.Printf("error in send counter: %v\n", err)
-				continue
+			if successSend {
+				sendInfo = make(map[string]float64)
+				pollCount = 0
 			}
-
-			err = BatchSendGauge(client, sendInfo, config)
-			if err != nil {
-				log.Printf("error in batch send gauge: %v\n", err)
-				continue
-			}
-
-			err = BatchSendCounter(client, pollCount, config)
-			if err != nil {
-				log.Printf("error in batch send counter: %v\n", err)
-				continue
-			}
-
-			pollCount = 0
 		}
 	}
+	return nil
 }
