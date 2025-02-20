@@ -74,9 +74,9 @@ func Routing() (err error) {
 		}
 	}
 
-	syncInfo, err := GetSyncInfo(*config)
+	syncInfo, err := GetHandlerConfig(config)
 	if err != nil {
-		return fmt.Errorf("error in GetSyncInfo: %w", err)
+		return fmt.Errorf("error in GetHandlerConfig: %w", err)
 	}
 
 	if syncInfo.DB != nil {

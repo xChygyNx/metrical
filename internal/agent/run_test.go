@@ -19,7 +19,7 @@ func TestPrepareStatsForSend(t *testing.T) {
 		"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
 		"TotalAlloc", "RandomValue"}
 
-	memStats := prepareStatsForSend(&memStat)
+	memStats := prepareMemStatsForSend(&memStat)
 	for _, stat := range stats {
 		msg = "MemStat not contain stat " + stat
 		_, ok := memStats[stat]
