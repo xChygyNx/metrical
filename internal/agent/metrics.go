@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"strconv"
 
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
@@ -83,13 +84,17 @@ func (gpum *GoPsUtilMetrics) collectMetrics() (map[string]float64, error) {
 	result["TotalMemory"] = float64(memData.Total)
 	result["FreeMemory"] = float64(memData.Available)
 
-	infoStats, err := cpu.Info()
+	timesStat, err := cpu.Times(true)
 	if err != nil {
 		return nil, fmt.Errorf("error in get cpuStats: %w", err)
 	}
-	for i := range infoStats {
+	for i := range timesStat {
+		value, err := strconv.Atoi(timesStat[i].CPU)
+		if err != nil {
+			return nil, fmt.Errorf("error in atoi value of CPU: %w", err)
+		}
 		key := fmt.Sprintf("CPUutilization%d", i+1)
-		result[key] = float64(infoStats[i].CPU)
+		result[key] = float64(value)
 	}
 
 	return result, nil
