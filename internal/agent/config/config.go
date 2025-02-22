@@ -1,4 +1,4 @@
-package agent
+package config
 
 import (
 	"errors"
@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-type config struct {
+type AgentConfig struct {
 	Sha256Key      string
 	HostAddr       HostPort
 	PollInterval   int
@@ -43,8 +43,8 @@ func (hp *HostPort) Set(value string) error {
 	return nil
 }
 
-func parseFlag() *config {
-	agentConfig := new(config)
+func parseFlag() *AgentConfig {
+	agentConfig := new(AgentConfig)
 	const defaultPollInterval = 2
 	const defaultReportInterval = 10
 	const defaultCryptoKey = ""
@@ -71,7 +71,7 @@ func parseFlag() *config {
 	return agentConfig
 }
 
-func GetConfig() (*config, error) {
+func GetConfig() (*AgentConfig, error) {
 	config := parseFlag()
 	pollInterval, ok := os.LookupEnv("POLL_INTERVAL")
 	if ok {

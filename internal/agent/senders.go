@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/xChygyNx/metrical/internal/agent/config"
 	"io"
 	"log"
 	"net/http"
@@ -46,7 +47,7 @@ func hashSendData(data []byte) string {
 	return dataHash
 }
 
-func SendGauge(client *pester.Client, sendInfo map[string]float64, config *config) (err error) {
+func SendGauge(client *pester.Client, sendInfo map[string]float64, config *config.config) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		hostAddr := config.HostAddr
 		urlString := "http://" + hostAddr.String() + "/update"
@@ -118,7 +119,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 	return
 }
 
-func SendCounter(client *pester.Client, pollCount int, config *config) (err error) {
+func SendCounter(client *pester.Client, pollCount int, config *config.config) (err error) {
 	hostAddr := config.HostAddr
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
@@ -181,7 +182,7 @@ func SendCounter(client *pester.Client, pollCount int, config *config) (err erro
 	return
 }
 
-func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *config) (err error) {
+func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *config.config) (err error) {
 	hostAddr := config.HostAddr
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
@@ -256,7 +257,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	return
 }
 
-func BatchSendCounter(client *pester.Client, pollCount int, config *config) (err error) {
+func BatchSendCounter(client *pester.Client, pollCount int, config *config.config) (err error) {
 	hostAddr := config.HostAddr
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)

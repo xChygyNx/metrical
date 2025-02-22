@@ -2,6 +2,7 @@ package agent
 
 import (
 	"errors"
+	config2 "github.com/xChygyNx/metrical/internal/agent/config"
 	"log"
 	"sync"
 	"time"
@@ -59,7 +60,7 @@ func Run() error {
 	var pollCount int
 	var sendInfo map[string]float64
 
-	config, err := GetConfig()
+	config, err := config2.GetConfig()
 	if err != nil {
 		return err
 	}
