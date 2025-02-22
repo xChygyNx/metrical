@@ -1,17 +1,18 @@
 package agent
 
 import (
-	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPrepareStatsForSend(t *testing.T) {
-	var memStat runtime.MemStats
 	var msg string
 
-	runtime.ReadMemStats(&memStat)
+	metricCollector := NewMemStatsMetrics()
+
+	result, err := metricCollector.collectMetrics()
+	assert.Nil(t, err)
 	stats := []string{"Alloc", "BuckHashSys", "Frees", "GCCPUFraction", "GCSys",
 		"HeapAlloc", "HeapIdle", "HeapInuse", "HeapObjects", "HeapReleased",
 		"HeapSys", "LastGC", "Lookups", "MCacheInuse", "MCacheSys",
@@ -19,10 +20,9 @@ func TestPrepareStatsForSend(t *testing.T) {
 		"OtherSys", "PauseTotalNs", "StackInuse", "StackSys", "Sys",
 		"TotalAlloc", "RandomValue"}
 
-	memStats := prepareStatsForSend(&memStat)
 	for _, stat := range stats {
 		msg = "MemStat not contain stat " + stat
-		_, ok := memStats[stat]
+		_, ok := result[stat]
 		assert.True(t, ok, msg)
 	}
 }

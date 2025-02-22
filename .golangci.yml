@@ -567,6 +567,8 @@ issues:
       text: "for loop can be changed to use an integer range"
     - path: "internal/server/DBMemStorage.go"
       text: "for loop can be changed to use an integer range"
+    - path: "internal/agent/run.go"
+      text: "for loop can be changed to use an integer range"
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0
