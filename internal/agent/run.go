@@ -2,12 +2,14 @@ package agent
 
 import (
 	"errors"
-	config2 "github.com/xChygyNx/metrical/internal/agent/config"
+	"fmt"
 	"log"
 	"sync"
 	"time"
 
 	"github.com/sethgrid/pester"
+
+	myConfig "github.com/xChygyNx/metrical/internal/agent/config"
 )
 
 const (
@@ -60,9 +62,9 @@ func Run() error {
 	var pollCount int
 	var sendInfo map[string]float64
 
-	config, err := config2.GetConfig()
+	config, err := myConfig.GetConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("can't get agent config: %w", err)
 	}
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)

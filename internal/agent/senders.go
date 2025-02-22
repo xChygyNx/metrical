@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/xChygyNx/metrical/internal/agent/config"
 	"io"
 	"log"
 	"net/http"
@@ -17,6 +16,8 @@ import (
 
 	"github.com/sethgrid/pester"
 	"github.com/xChygyNx/metrical/internal/server/types"
+
+	"github.com/xChygyNx/metrical/internal/agent/config"
 )
 
 const (
@@ -47,9 +48,9 @@ func hashSendData(data []byte) string {
 	return dataHash
 }
 
-func SendGauge(client *pester.Client, sendInfo map[string]float64, config *config.AgentConfig) (err error) {
+func SendGauge(client *pester.Client, sendInfo map[string]float64, agentConfig *config.AgentConfig) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
-		hostAddr := config.HostAddr
+		hostAddr := agentConfig.HostAddr
 		urlString := "http://" + hostAddr.String() + "/update"
 
 		sendJSON := types.Metrics{
@@ -73,7 +74,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 		}
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
-		if config.Sha256Key != "" {
+		if agentConfig.Sha256Key != "" {
 			hash := hashSendData(jsonString)
 			log.Printf("Agent hash data in SendGauge: %s", jsonString)
 			log.Printf("Agent set hash in header in SendGauge: %s", hash)
@@ -119,8 +120,8 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *confi
 	return
 }
 
-func SendCounter(client *pester.Client, pollCount int, config *config.AgentConfig) (err error) {
-	hostAddr := config.HostAddr
+func SendCounter(client *pester.Client, pollCount int, agentConfig *config.AgentConfig) (err error) {
+	hostAddr := agentConfig.HostAddr
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
 	sendJSON := types.Metrics{
@@ -144,7 +145,7 @@ func SendCounter(client *pester.Client, pollCount int, config *config.AgentConfi
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
-	if config.Sha256Key != "" {
+	if agentConfig.Sha256Key != "" {
 		hash := hashSendData(jsonString)
 		log.Printf("Agent hash data in SendCounter: %s", jsonString)
 		log.Printf("Agent set hash in header in SendCounter: %s", hash)
@@ -182,8 +183,8 @@ func SendCounter(client *pester.Client, pollCount int, config *config.AgentConfi
 	return
 }
 
-func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *config.AgentConfig) (err error) {
-	hostAddr := config.HostAddr
+func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, agentConfig *config.AgentConfig) (err error) {
+	hostAddr := agentConfig.HostAddr
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
 
@@ -213,7 +214,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
-	if config.Sha256Key != "" {
+	if agentConfig.Sha256Key != "" {
 		hash := hashSendData(jsonString)
 		log.Printf("Agent hash data in BatchSendGauge: %s", jsonString)
 		log.Printf("Agent set hash in header in BatchSendGauge: %s", hash)
@@ -257,8 +258,8 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	return
 }
 
-func BatchSendCounter(client *pester.Client, pollCount int, config *config.AgentConfig) (err error) {
-	hostAddr := config.HostAddr
+func BatchSendCounter(client *pester.Client, pollCount int, agentConfig *config.AgentConfig) (err error) {
+	hostAddr := agentConfig.HostAddr
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)
 	sendData := make([]types.Metrics, 0, 1)
@@ -286,7 +287,7 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *config.Agent
 
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
-	if config.Sha256Key != "" {
+	if agentConfig.Sha256Key != "" {
 		hash := hashSendData(jsonString)
 		log.Printf("Agent hash data in BatchSendGauge: %s", jsonString)
 		log.Printf("Agent set hash in header in BatchSendGauge: %s", hash)
