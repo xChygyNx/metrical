@@ -1,8 +1,9 @@
 package agent
 
 import (
-	"github.com/sethgrid/pester"
 	"log"
+
+	"github.com/sethgrid/pester"
 
 	myconfig "github.com/xChygyNx/metrical/internal/agent/config"
 )
