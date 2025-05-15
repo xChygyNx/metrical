@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/sethgrid/pester"
+
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 

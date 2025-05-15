@@ -13,6 +13,7 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
