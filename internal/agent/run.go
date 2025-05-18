@@ -1,3 +1,5 @@
+// Модуль agent собирает метрики системы и отсылает их на сервер
+// адрес которого задан в конфигурации
 package agent
 
 import (
@@ -55,6 +57,8 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	return result
 }
 
+// Run запускает агент по сбору метрик системы, который в соответсвии с заданной
+// в конфигурации интервалами времени собирает и отсылает метрики системы на сервер
 func Run() error {
 	var pollCount int
 	var memStats runtime.MemStats
