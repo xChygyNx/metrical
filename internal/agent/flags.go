@@ -1,3 +1,5 @@
+// Модуль agent собирает метрики системы и отсылает их на сервер
+// адрес которого задан в конфигурации
 package agent
 
 import (
@@ -8,21 +10,26 @@ import (
 	"strings"
 )
 
+// AggntConfig структура для хранения параметров агента, считанных
+// из командной строки
 type AgentConfig struct {
-	HostPort       HostPort
-	PollInterval   int
-	ReportInterval int
+	HostPort       HostPort // хост и порт для отправки собранных метрик в формате "host:port"
+	PollInterval   int      // интервал времени для сбора метрик в секундах
+	ReportInterval int      // интервал времени для отправки метрик на сервер в секундах
 }
 
+// HostPort структура для хранения адреса сервера, куда будут отправляться собранные метрики
 type HostPort struct {
-	Host string
-	Port int
+	Host string // хост сервера
+	Port int    // порт сервера
 }
 
+// String представляет данные из структуры HostPort в текстовом формате "host:port"
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
 }
 
+// Set считывет данные из строки формата "host:port" в структуру HostPort
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
 	numPartsHostPort := 2
