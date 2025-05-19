@@ -44,6 +44,8 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 	return logFn
 }
 
+// Routing запускает сервер по приему http запросов на сохранение метрик в хранилища
+// указанные в конфигурации
 func Routing() (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
