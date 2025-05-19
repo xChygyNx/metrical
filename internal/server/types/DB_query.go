@@ -1,3 +1,5 @@
+// Package types определяет структуры для работы сервера сбора метрик, а также их
+// методы для удобной работы с ними
 package types
 
 import (
@@ -13,6 +15,7 @@ type gaugeInsertQuery struct {
 	exec  bool
 }
 
+// NewGaugeInsertQuery создает структуру для выполнения вставки записи в PostgreSQL таблицу gauges
 func NewGaugeInsertQuery() gaugeInsertQuery {
 	return gaugeInsertQuery{
 		exec:  false,
@@ -21,6 +24,7 @@ func NewGaugeInsertQuery() gaugeInsertQuery {
 	}
 }
 
+// AddRecord добавляет значения в SQL запрос на вставку записей в PostgreSQL таблицу gauges
 func (giq *gaugeInsertQuery) AddRecord(metricName string, metricValue string) {
 	giq.exec = true
 	numArgs := len(giq.args)
@@ -36,6 +40,7 @@ func (giq *gaugeInsertQuery) AddRecord(metricName string, metricValue string) {
 	giq.args = append(giq.args, metricName, metricValue)
 }
 
+// ExecInsert выполняет запрос на вставку записи в PostgreSQL таблицу gauges
 func (giq *gaugeInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
 	if giq.exec {
 		giq.exec = false
@@ -54,6 +59,7 @@ type counterInsertQuery struct {
 	exec  bool
 }
 
+// NewCounterInsertQuery создает структуру для выполнения вставки записи в PostgreSQL таблицу counters
 func NewCounterInsertQuery() counterInsertQuery {
 	return counterInsertQuery{
 		exec:  false,
@@ -62,6 +68,7 @@ func NewCounterInsertQuery() counterInsertQuery {
 	}
 }
 
+// AddRecord добавляет значения в SQL запрос на вставку записей в PostgreSQL таблицу counters
 func (ciq *counterInsertQuery) AddRecord(metricName string, metricValue string) {
 	ciq.exec = true
 	numArgs := len(ciq.args)
@@ -77,6 +84,7 @@ func (ciq *counterInsertQuery) AddRecord(metricName string, metricValue string) 
 	ciq.args = append(ciq.args, metricName, metricValue)
 }
 
+// ExecInsert выполняет запрос на вставку записи в PostgreSQL таблицу counters
 func (ciq *counterInsertQuery) ExecInsert(ctx context.Context, tx *sql.Tx) (err error) {
 	if ciq.exec {
 		ciq.exec = false
