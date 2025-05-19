@@ -1,3 +1,5 @@
+// Package server отвечает за прием метрик от агента и их хранения в соответствии
+// с заданной конфигурацией
 package server
 
 import (
@@ -26,23 +28,27 @@ const (
 		);`
 )
 
+// HostPort структура для хранения адреса где следует запустить сервер
 type HostPort struct {
-	Host string
-	Port int
+	Host string // хост сервера
+	Port int    // порт сервера
 }
 
+// Config структура для хранение конфигураций сервера
 type Config struct {
-	FileStoragePath string
-	DBAddress       string
-	HostPort        HostPort
-	StoreInterval   int
-	Restore         bool
+	FileStoragePath string   // путь до файла для хранения метрик
+	DBAddress       string   // адрес для подключения к БД PostgreSQL
+	HostPort        HostPort // хост и порт на котором запущен сервет в формате "host:port"
+	StoreInterval   int      // интервал времени в секундах, по истечении которого текущие показания сервера сохраняются на диск или в БД
+	Restore         bool     // флаг, определяющий, загружать или нет ранее сохранённые значения из указанного файла или БД при старте сервера
 }
 
+// String представляет данные из структуры HostPort в текстовом формате "host:port"
 func (hp *HostPort) String() string {
 	return fmt.Sprintf("%s:%d", hp.Host, hp.Port)
 }
 
+// String представляет данные из структуры Config в текстовом формате
 func (conf *Config) String() string {
 	return fmt.Sprintf(
 		"StoreInterval: %d sec\n"+
@@ -53,6 +59,7 @@ func (conf *Config) String() string {
 		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port, conf.DBAddress)
 }
 
+// Set считывет данные из строки формата "host:port" в структуру HostPort
 func (hp *HostPort) Set(value string) error {
 	hostPort := strings.Split(value, ":")
 	numHostPortParts := 2
@@ -85,6 +92,15 @@ func parseFlag() *Config {
 	return config
 }
 
+// GetConfig возвращает структуру config в которой заданы такие параметры
+// работы сервера, как адрес хоста и порт где будет запущен сервер,
+// адрес подключения к PostgreSQL БД и путь до файла, где хранить присланные метрики,
+// интервал времени в секундах, по истечении которого текущие показания сервера сохраняются на диск или в БД и
+// параметр, определяющий, загружать или нет ранее сохранённые значения из указанного файла или БД при старте сервера
+//
+// Приоритет источников для задания параметров агента:
+// 1) Переменные окружения
+// 2) Аргументы командной строки
 func GetConfig() (*Config, error) {
 	config := parseFlag()
 
@@ -153,6 +169,7 @@ func createMetricDB(connectInfo string) (*sql.DB, error) {
 	return db, nil
 }
 
+// GetSyncInfo возвращает структуру с информацие о параметрах хранения присланных метрик на сервере
 func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
 	var db *sql.DB
 	var err error
