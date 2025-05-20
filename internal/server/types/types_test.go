@@ -135,13 +135,13 @@ func TestGetCounter(t *testing.T) {
 		ok     bool
 	}{
 		{
-			name:   "Get exists Gauge metric",
+			name:   "Get exists Counter metric",
 			metcic: existMetric,
 			want:   val,
 			ok:     true,
 		},
 		{
-			name:   "Get not exists Gauge metric",
+			name:   "Get not exists Counter metric",
 			metcic: notExistMetric,
 			want:   0,
 			ok:     false,
