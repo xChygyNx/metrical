@@ -8,9 +8,7 @@ import (
 )
 
 func TestParseFlagWithoutArgs(t *testing.T) {
-	os.Args = append(os.Args, "-p=10")
-	os.Args = append(os.Args, "-r=30")
-	os.Args = append(os.Args, "-a=google.com:1234")
+	os.Args = append(os.Args, "-p=10", "-r=30", "-a=google.com:1234")
 	t.Run("Read command line args with args", func(t *testing.T) {
 		conf := parseFlag()
 		assert.Equal(t, conf.PollInterval, 10)
