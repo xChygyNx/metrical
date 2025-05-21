@@ -28,9 +28,9 @@ const (
 
 // SendGauge отправляет по одной собранные метрики типа gauge на сервер. При ошибке отправки
 // повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
-// обратиться к администратору системы)
+// обратиться к администратору системы).
 //
-// Deprecated: используйте BatchSendGauge
+// Deprecated: используйте BatchSendGauge.
 func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		urlString := "http://" + hostAddr.String() + "/update"
@@ -91,9 +91,9 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 
 // SendCounter отправляет по одной собранные метрики типа counter на сервер. При ошибке отправки
 // повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
-// обратиться к администратору системы)
+// обратиться к администратору системы).
 //
-// Deprecated: используйте BatchSendCounter
+// Deprecated: используйте BatchSendCounter.
 func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
@@ -136,7 +136,7 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 
 // BatchSendGauge собирает метрики системы тапа gauge в один JSON и отправляет их на сервер. При ошибке отправки
 // повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
-// обратиться к администратору системы)
+// обратиться к администратору системы).
 func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
@@ -194,7 +194,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 
 // BatchSendCounter собирает метрики системы тапа counter в один JSON и отправляет их на сервер. При ошибке отправки
 // повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
-// обратиться к администратору системы)
+// обратиться к администратору системы).
 func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)
