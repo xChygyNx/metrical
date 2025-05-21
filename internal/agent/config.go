@@ -19,7 +19,7 @@ type config struct {
 //
 // Приоритет источников для задания параметров агента:
 // 1) Переменные окружения
-// 2) Аргументы командной строки
+// 2) Аргументы командной строки.
 func GetConfig() (*config, error) {
 	config := &config{}
 	agentConfig := parseFlag()

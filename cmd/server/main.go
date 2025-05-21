@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	_ "net/http/pprof"
+	_ "net/http/pprof" // требуется для запуска профилировщика
 
 	"github.com/xChygyNx/metrical/internal/server"
 )
