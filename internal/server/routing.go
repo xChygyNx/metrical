@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"net/http"
+	"net/http/pprof"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -91,6 +92,7 @@ func Routing() (err error) {
 
 	router := chi.NewRouter()
 	router.Use(GzipHandler)
+	router.Handle("/debug/pprof/heap", pprof.Handler("heap"))
 	router.Post("/update",
 		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/",
