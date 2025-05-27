@@ -53,27 +53,6 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	router.Use(GzipHandler)
 	router.Mount("/debug", middleware.Profiler())
 
-	//router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-	//	http.Redirect(w, r, r.RequestURI+"/pprof/", http.StatusMovedPermanently)
-	//})
-	//router.HandleFunc("/pprof", func(w http.ResponseWriter, r *http.Request) {
-	//	http.Redirect(w, r, r.RequestURI+"/", http.StatusMovedPermanently)
-	//})
-	//
-	//router.HandleFunc("/pprof/*", pprof.Index)
-	//router.HandleFunc("/pprof/cmdline", pprof.Cmdline)
-	//router.HandleFunc("/pprof/profile", pprof.Profile)
-	//router.HandleFunc("/pprof/symbol", pprof.Symbol)
-	//router.HandleFunc("/pprof/trace", pprof.Trace)
-	//router.Handle("/vars", expvar.Handler())
-	//
-	//router.Handle("/pprof/goroutine", pprof.Handler("goroutine"))
-	//router.Handle("/pprof/threadcreate", pprof.Handler("threadcreate"))
-	//router.Handle("/pprof/mutex", pprof.Handler("mutex"))
-	//router.Handle("/pprof/heap", pprof.Handler("heap"))
-	//router.Handle("/pprof/block", pprof.Handler("block"))
-	//router.Handle("/pprof/allocs", pprof.Handler("allocs"))
-
 	router.Post("/update",
 		middlewareLogger(SaveMetricHandle(storage, syncInfo), sugar))
 	router.Post("/update/",
