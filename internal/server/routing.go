@@ -4,14 +4,13 @@ package server
 
 import (
 	"errors"
-	"expvar"
 	"fmt"
 	"io/fs"
 	"net/http"
-	"net/http/pprof"
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 
 	"github.com/xChygyNx/metrical/internal/server/types"
@@ -48,87 +47,11 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 	return logFn
 }
 
-var epoch = time.Unix(0, 0).UTC().Format(http.TimeFormat)
-
-var noCacheHeaders = map[string]string{
-	"Expires":         epoch,
-	"Cache-Control":   "no-cache, no-store, no-transform, must-revalidate, private, max-age=0",
-	"Pragma":          "no-cache",
-	"X-Accel-Expires": "0",
-}
-
-var etagHeaders = []string{
-	"ETag",
-	"If-Modified-Since",
-	"If-Match",
-	"If-None-Match",
-	"If-Range",
-	"If-Unmodified-Since",
-}
-
-// NoCache is a simple piece of middleware that sets a number of HTTP headers to prevent
-// a router (or subrouter) from being cached by an upstream proxy and/or client.
-//
-// As per http://wiki.nginx.org/HttpProxyModule - NoCache sets:
-//
-//	Expires: Thu, 01 Jan 1970 00:00:00 UTC
-//	Cache-Control: no-cache, private, max-age=0
-//	X-Accel-Expires: 0
-//	Pragma: no-cache (for HTTP/1.0 proxies/clients)
-func NoCache(h http.Handler) http.Handler {
-	fn := func(w http.ResponseWriter, r *http.Request) {
-
-		// Delete any ETag headers that may have been set
-		for _, v := range etagHeaders {
-			if r.Header.Get(v) != "" {
-				r.Header.Del(v)
-			}
-		}
-
-		// Set our NoCache headers
-		for k, v := range noCacheHeaders {
-			w.Header().Set(k, v)
-		}
-
-		h.ServeHTTP(w, r)
-	}
-
-	return http.HandlerFunc(fn)
-}
-
-func Profiler() http.Handler {
-	r := chi.NewRouter()
-	r.Use(NoCache)
-
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, r.RequestURI+"/pprof/", http.StatusMovedPermanently)
-	})
-	r.HandleFunc("/pprof", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, r.RequestURI+"/", http.StatusMovedPermanently)
-	})
-
-	r.HandleFunc("/pprof/*", pprof.Index)
-	r.HandleFunc("/pprof/cmdline", pprof.Cmdline)
-	r.HandleFunc("/pprof/profile", pprof.Profile)
-	r.HandleFunc("/pprof/symbol", pprof.Symbol)
-	r.HandleFunc("/pprof/trace", pprof.Trace)
-	r.Handle("/vars", expvar.Handler())
-
-	r.Handle("/pprof/goroutine", pprof.Handler("goroutine"))
-	r.Handle("/pprof/threadcreate", pprof.Handler("threadcreate"))
-	r.Handle("/pprof/mutex", pprof.Handler("mutex"))
-	r.Handle("/pprof/heap", pprof.Handler("heap"))
-	r.Handle("/pprof/block", pprof.Handler("block"))
-	r.Handle("/pprof/allocs", pprof.Handler("allocs"))
-
-	return r
-}
-
 func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	config *Config, sugar zap.SugaredLogger) chi.Router {
 	router := chi.NewRouter()
 	router.Use(GzipHandler)
-	router.Mount("/debug", Profiler())
+	router.Mount("/debug", middleware.Profiler())
 
 	//router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 	//	http.Redirect(w, r, r.RequestURI+"/pprof/", http.StatusMovedPermanently)
