@@ -45,8 +45,7 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 			return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 		}
 
-		//compressJSON, err := compress(jsonString)
-		//if err != nil {
+		//compre:q nil {
 		//	return fmt.Errorf("error in compress gauge metrics: %w", err)
 		//}
 
