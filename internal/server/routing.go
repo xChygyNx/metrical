@@ -50,7 +50,7 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	config *Config, sugar zap.SugaredLogger) chi.Router {
 	router := chi.NewRouter()
-	// router.Use(GzipHandler)
+	//router.Use(GzipHandler)
 	router.Mount("/debug", middleware.Profiler())
 
 	router.Post("/update",

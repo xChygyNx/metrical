@@ -105,10 +105,10 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 	if err != nil {
 		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
-	// compressJSON, err := compress(jsonString)
-	// if err != nil {
-	//	 return fmt.Errorf("error in compress counter metrics: %w", err)
-	// }
+	//compressJSON, err := compress(jsonString)
+	//if err != nil {
+	//	return fmt.Errorf("error in compress counter metrics: %w", err)
+	//}
 	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return
