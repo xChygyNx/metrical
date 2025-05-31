@@ -13,12 +13,14 @@ import (
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
+// Константы для работы обработчиков запросов.
 const (
-	GAUGE   = "gauge"
-	COUNTER = "counter"
+	GAUGE   = "gauge"   // тип метрики gauge.
+	COUNTER = "counter" // тип метрики counter.
 
 	contentType            = "Content-type"
 	countGaugeMetrics      = 28
@@ -95,6 +97,8 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 	}
 }
 
+// SaveMetricHandleOld обработчик POST запросов на сохранение метрик в которых информация
+// о типе, названии метрики и ее значении передаются через URL запроса.
 func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
@@ -136,6 +140,8 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 	}
 }
 
+// SaveMetricHandle обработчик POST запросов на сохранение метрик в которых информация
+// о типе, названии метрики и ее значении передаются в теле запроса по одной.
 func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
@@ -228,6 +234,9 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 	}
 }
 
+// SaveBatchMetricHandle обработчик POST запросов на сохранение метрик в которых информация
+// о типе, названии метрики и ее значении передаются в теле запроса по несколько метрик
+// за раз в виде JSON.
 func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
@@ -325,6 +334,8 @@ func getMetricValue(mType, mName string, storage *types.MemStorage) (num interfa
 	return
 }
 
+// GetMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
+// метрики значение которой необходимо получить содержится в URL запроса.
 func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
@@ -365,6 +376,8 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
+// GetJSONMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
+// // метрики значение которой необходимо получить содержится в теле запроса.
 func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
@@ -425,6 +438,8 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
+// ListMetricHandle GET запросов на получение значения одной сохраненной метрики. Возвращает
+// все сохраненные метрики в JSON виде с группировкой тип метрики/название метрики.
 func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Add(contentType, "text/html")
@@ -452,6 +467,9 @@ func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	}
 }
 
+// GzipHandler - middleware обработчик, который в зависимости от содержания заголовков запроса
+// Accept-Encoding, Content-Encoding и Content-Type заменяет или нет у оборачиваемых обработчиков
+// "считыватели" и "записчики" на версии, умеющие работать со сжатыми данными.
 func GzipHandler(internal http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		resWriter := w

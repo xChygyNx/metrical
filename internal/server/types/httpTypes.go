@@ -8,6 +8,7 @@ import (
 	"net/http"
 )
 
+// Metrics структура для хранения значений метрики.
 type Metrics struct {
 	Delta *int64   `json:"delta,omitempty"`
 	Value *float64 `json:"value,omitempty"`
@@ -20,6 +21,7 @@ type gzipWriter struct {
 	Writer *gzip.Writer
 }
 
+// NewGzipWriter оборачивает ResponseWriter в "записыватель" использующий gzip сжатие.
 func NewGzipWriter(w http.ResponseWriter) *gzipWriter {
 	return &gzipWriter{
 		ResponseWriter: w,
@@ -27,6 +29,7 @@ func NewGzipWriter(w http.ResponseWriter) *gzipWriter {
 	}
 }
 
+// Write сжимает и записывает данные в тело ответа.
 func (gw *gzipWriter) Write(b []byte) (int, error) {
 	numRead, err := gw.Writer.Write(b)
 	if err != nil {
@@ -35,6 +38,7 @@ func (gw *gzipWriter) Write(b []byte) (int, error) {
 	return numRead, nil
 }
 
+// WriteHeader записывает в заголовок ответа Content-Encoding значение gzip.
 func (gw *gzipWriter) WriteHeader(statusCode int) {
 	if statusCode < http.StatusMultipleChoices {
 		gw.Header().Set("Content-Encoding", "gzip")
@@ -42,6 +46,7 @@ func (gw *gzipWriter) WriteHeader(statusCode int) {
 	gw.ResponseWriter.WriteHeader(statusCode)
 }
 
+// Close закрывает "записыватель" gzipWriter.
 func (gw *gzipWriter) Close() error {
 	err := gw.Writer.Close()
 	if err != nil {
@@ -55,6 +60,7 @@ type gzipReader struct {
 	reader *gzip.Reader
 }
 
+// NewGzipReader возвращает "считыватель" способный читать сжатые с помощью алгоритма gzip данные.
 func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 	bodyRec, err := io.ReadAll(r)
 	if err != nil {
@@ -71,10 +77,12 @@ func NewGzipReader(r io.ReadCloser) (*gzipReader, error) {
 	}, nil
 }
 
+// Read читает переданные сжатые данные.
 func (gr *gzipReader) Read(p []byte) (int, error) {
 	return gr.reader.Read(p)
 }
 
+// Close закрывает "считыватель" сжатых с помощью алгоритма gzip данных.
 func (gr *gzipReader) Close() error {
 	err := gr.ReadCloser.Close()
 	if err != nil {

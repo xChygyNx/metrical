@@ -567,6 +567,10 @@ issues:
       text: "for loop can be changed to use an integer range"
     - path: "internal/server/DBMemStorage.go"
       text: "for loop can be changed to use an integer range"
+    - path: "internal/server/types/checks_test.go"
+      text: "lines are duplicate of"
+    - path: "internal/agent/flags_test.go"
+      text: "reassigning variable Args in other package os"
   fix: false
   max-issues-per-linter: 0
   max-same-issues: 0

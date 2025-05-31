@@ -11,6 +11,7 @@ import (
 	"os"
 
 	"github.com/sethgrid/pester"
+
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
@@ -25,6 +26,11 @@ const (
 	responseBodyMsg      = "response Body: "
 )
 
+// SendGauge отправляет по одной собранные метрики типа gauge на сервер. При ошибке отправки
+// повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
+// обратиться к администратору системы).
+//
+// Deprecated: используйте BatchSendGauge.
 func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	iterationLogic := func(attr string, value float64) (err error) {
 		urlString := "http://" + hostAddr.String() + "/update"
@@ -39,12 +45,11 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 			return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 		}
 
-		compressJSON, err := compress(jsonString)
-		if err != nil {
-			return fmt.Errorf("error in compress gauge metrics: %w", err)
-		}
+		//compre:q nil {
+		//	return fmt.Errorf("error in compress gauge metrics: %w", err)
+		//}
 
-		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(compressJSON))
+		req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(jsonString))
 		if err != nil {
 			return fmt.Errorf("failed to create http Request: %w", err)
 		}
@@ -83,6 +88,11 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr Host
 	return
 }
 
+// SendCounter отправляет по одной собранные метрики типа counter на сервер. При ошибке отправки
+// повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
+// обратиться к администратору системы).
+//
+// Deprecated: используйте BatchSendCounter.
 func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/update"
 	pollCount64 := int64(pollCount)
@@ -95,11 +105,11 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 	if err != nil {
 		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
-	compressJSON, err := compress(jsonString)
-	if err != nil {
-		return fmt.Errorf("error in compress counter metrics: %w", err)
-	}
-	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(compressJSON))
+	// compressJSON, err := compress(jsonString)
+	// if err != nil {
+	//	return fmt.Errorf("error in compress counter metrics: %w", err)
+	// }
+	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return
 	}
@@ -123,6 +133,9 @@ func SendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err e
 	return
 }
 
+// BatchSendGauge собирает метрики системы тапа gauge в один JSON и отправляет их на сервер. При ошибке отправки
+// повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
+// обратиться к администратору системы).
 func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr HostPort) (err error) {
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
@@ -141,12 +154,12 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 		return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 	}
 
-	compressJSON, err := compress(jsonString)
-	if err != nil {
-		return fmt.Errorf("error in compress gauge metrics: %w", err)
-	}
+	// compressJSON, err := compress(jsonString)
+	// if err != nil {
+	//	 return fmt.Errorf("error in compress gauge metrics: %w", err)
+	// }
 
-	req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(compressJSON))
+	req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return fmt.Errorf("failed to create http Request: %w", err)
 	}
@@ -178,6 +191,9 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 	return
 }
 
+// BatchSendCounter собирает метрики системы тапа counter в один JSON и отправляет их на сервер. При ошибке отправки
+// повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
+// обратиться к администратору системы).
 func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (err error) {
 	counterPath := "http://" + hostAddr.String() + "/updates/"
 	pollCount64 := int64(pollCount)
@@ -193,11 +209,11 @@ func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (
 	if err != nil {
 		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
-	compressJSON, err := compress(jsonString)
-	if err != nil {
-		return fmt.Errorf("error in compress counter metrics: %w", err)
-	}
-	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(compressJSON))
+	// compressJSON, err := compress(jsonString)
+	// if err != nil {
+	//	 return fmt.Errorf("error in compress counter metrics: %w", err)
+	// }
+	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(jsonString))
 	if err != nil {
 		return
 	}
