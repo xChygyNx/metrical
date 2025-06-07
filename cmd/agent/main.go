@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/xChygyNx/metrical/internal/agent"
 	"log"
+
+	"github.com/xChygyNx/metrical/internal/agent"
 )
 
 // For output tech info need launch app with ldflags
