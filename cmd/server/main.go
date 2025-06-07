@@ -4,24 +4,18 @@ import (
 	"fmt"
 	"log"
 	_ "net/http/pprof" // требуется для запуска профилировщика
-	"os/exec"
-	"time"
 
 	"github.com/xChygyNx/metrical/internal/server"
 )
 
-func getLastCommit() string {
-	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		fmt.Println(err)
-	}
-	commitHash := string(out)
-	return commitHash
-}
-
-var buildVersion = "1.0.0"
-var buildDate = time.Now().Format("02-01-2006")
-var buildCommit = getLastCommit()
+// For output tech info need launch app with ldflags
+//
+//	-X main.buildVersion=<buildVersion> for output "Build version: <buildVersion>" (default N/A)
+//	-X main.buildDate=$(date +'<date_format>') for output "Build date: <date_in_format>" (default N/A)
+//	-X main.buildCommit=$(git rev-parse HEAD) for output "Build commit: <last_commit_hash>" (default N/A)
+var buildVersion string = "N/A" // Server version
+var buildDate string = "N/A"    // Date of Build
+var buildCommit string = "N/A"  // Hash of the last commit
 
 func main() {
 	fmt.Printf("Build version: %s\n", buildVersion)
