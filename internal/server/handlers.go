@@ -74,9 +74,9 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 		}
 
 		defer func() {
-			err := db.Close()
-			if err != nil {
-				errorMsg := fmt.Errorf("can't close connection with DB videos: %w", err)
+			err_close := db.Close()
+			if err_close != nil {
+				errorMsg := fmt.Errorf("can't close connection with DB videos: %w", err_close)
 				log.Println(errorMsg)
 				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
 				return

@@ -107,8 +107,8 @@ func Routing() (err error) {
 		return errors.New("error in create zap registrator")
 	}
 	defer func() {
-		err := logger.Sync()
-		if err != nil {
+		err_sync_logger := logger.Sync()
+		if err_sync_logger != nil {
 			return
 		}
 	}()

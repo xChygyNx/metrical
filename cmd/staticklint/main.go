@@ -50,10 +50,10 @@ func checkOsExit(pass *analysis.Pass) (interface{}, error) {
 				printer.Fprint(buf, pass.Fset, x)
 				funcName := strings.Trim(buf.String(), " ")
 				if strings.HasPrefix(funcName, "os.Exit") {
-					return true
+					pass.Reportf(node.Pos(), "Call os.Exit in main module")
 				}
 			}
-			return false
+			return true
 		})
 	}
 	return nil, nil
