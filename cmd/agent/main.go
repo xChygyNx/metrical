@@ -2,25 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os/exec"
-	"time"
-
 	"github.com/xChygyNx/metrical/internal/agent"
+	"log"
 )
 
-func getLastCommit() string {
-	out, err := exec.Command("git", "rev-parse", "HEAD").Output()
-	if err != nil {
-		fmt.Println(err)
-	}
-	commitHash := string(out)
-	return commitHash
-}
-
-var buildVersion = "1.0.0"
-var buildDate = time.Now().Format("02-01-2006")
-var buildCommit = getLastCommit()
+var buildVersion string = "N/A"
+var buildDate string = "N/A"
+var buildCommit string = "N/A"
 
 func main() {
 	fmt.Printf("Build version: %s\n", buildVersion)
