@@ -1,0 +1,148 @@
+package main
+
+import (
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"errors"
+	"fmt"
+	"log"
+	"os"
+	"path/filepath"
+)
+
+const (
+	privateRSAKeyFileName = "rsa_key"
+	publicRSAKeyFileName  = "rsa_key.pub"
+	rsaKeysDirName        = "rsa_keys"
+)
+
+func generateRsaKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
+	privateKey, _ := rsa.GenerateKey(rand.Reader, 4096)
+	return privateKey, &privateKey.PublicKey
+}
+
+func exportRSAPrivateKeyAsPemStr(privateKey *rsa.PrivateKey) string {
+	privateKeyBytes := x509.MarshalPKCS1PrivateKey(privateKey)
+	privateKeyPem := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: privateKeyBytes,
+		},
+	)
+	return string(privateKeyPem)
+}
+
+func parseRSAPrivateKeyFromPemStr(privateKeyPEM string) (*rsa.PrivateKey, error) {
+	block, _ := pem.Decode([]byte(privateKeyPEM))
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the key")
+	}
+
+	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	if err != nil {
+		return nil, fmt.Errorf("error in parse RSA Private key from bytes: %w", err)
+	}
+
+	return privateKey, nil
+}
+
+func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
+	publicKeyBytes, err := x509.MarshalPKIXPublicKey(pubkey)
+	if err != nil {
+		return "", fmt.Errorf("error in export RSA public key in bytes: %w", err)
+	}
+	publicKeyPEM := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: publicKeyBytes,
+		},
+	)
+
+	return string(publicKeyPEM), nil
+}
+
+func parseRSAPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
+	block, _ := pem.Decode([]byte(pubPEM))
+	if block == nil {
+		return nil, errors.New("failed to parse PEM block containing the key")
+	}
+
+	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	if err != nil {
+		return nil, err
+	}
+
+	switch pub := pub.(type) {
+	case *rsa.PublicKey:
+		return pub, nil
+	default:
+		break // fall through
+	}
+	return nil, errors.New("key type is not RSA")
+}
+
+func createRSAKeysDir() (string, error) {
+	currentPath, err := os.Executable()
+	if err != nil {
+		return "", errors.New("error in define current path")
+	}
+	currentDir := filepath.Dir(currentPath)
+	rsaKeysDir := filepath.Join(currentDir, rsaKeysDirName)
+	if _, err = os.Stat(rsaKeysDir); errors.Is(err, os.ErrNotExist) {
+		err = os.Mkdir(rsaKeysDir, 0777)
+		if err != nil {
+			return "", fmt.Errorf("error in create rsa keys directory: %w", err)
+		}
+	}
+	return rsaKeysDir, nil
+}
+
+func writeRSAKeys(privateKey string, publicKey string, keysDir string) (err error) {
+	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), 0644)
+	if err != nil {
+		return fmt.Errorf("error in write public RSA key in file: %w", err)
+	}
+	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), 0644)
+	if err != nil {
+		return fmt.Errorf("error in write private RSA key in file: %w", err)
+	}
+	return nil
+}
+
+func main() {
+	// создаём директорию для ключей
+	keysDir, err := createRSAKeysDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// проверяем наличие rsa ключей, если их нет, то создаем новые
+	publicRSAKeyPath := filepath.Join(keysDir, publicRSAKeyFileName)
+	privateRSAKeyPath := filepath.Join(keysDir, privateRSAKeyFileName)
+	_, publicKeyErr := os.Stat(publicRSAKeyPath)
+	_, privateKeyErr := os.Stat(privateRSAKeyPath)
+
+	if errors.Is(publicKeyErr, os.ErrNotExist) || errors.Is(privateKeyErr, os.ErrNotExist) {
+		fmt.Println("Create new RSA keys")
+		// создаём новые приватный и публичный RSA-ключи
+		privateKey, publicKey := generateRsaKeyPair()
+		publicKeyString, err := exportRSAPublicKeyAsPemStr(publicKey)
+		if err != nil {
+			log.Fatal(err)
+		}
+		privateKeyString := exportRSAPrivateKeyAsPemStr(privateKey)
+
+		err = writeRSAKeys(privateKeyString, publicKeyString, keysDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if publicKeyErr != nil || privateKeyErr != nil {
+		errorMsg := fmt.Sprintf("error in check public RSA key: %s\n"+
+			"error in check private RSA key: %s\n", publicKeyErr.Error(), privateKeyErr.Error())
+		log.Fatal(errorMsg)
+	} else {
+		fmt.Println("All OK")
+	}
+}
