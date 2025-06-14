@@ -13,13 +13,14 @@ import (
 )
 
 const (
+	keyByteSize           = 4096
 	privateRSAKeyFileName = "rsa_key"
 	publicRSAKeyFileName  = "rsa_key.pub"
 	rsaKeysDirName        = "rsa_keys"
 )
 
 func generateRsaKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
-	privateKey, _ := rsa.GenerateKey(rand.Reader, 4096)
+	privateKey, _ := rsa.GenerateKey(rand.Reader, keyByteSize)
 	return privateKey, &privateKey.PublicKey
 }
 
@@ -34,19 +35,19 @@ func exportRSAPrivateKeyAsPemStr(privateKey *rsa.PrivateKey) string {
 	return string(privateKeyPem)
 }
 
-func parseRSAPrivateKeyFromPemStr(privateKeyPEM string) (*rsa.PrivateKey, error) {
-	block, _ := pem.Decode([]byte(privateKeyPEM))
-	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the key")
-	}
-
-	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("error in parse RSA Private key from bytes: %w", err)
-	}
-
-	return privateKey, nil
-}
+// func parseRSAPrivateKeyFromPemStr(privateKeyPEM string) (*rsa.PrivateKey, error) {
+//	block, _ := pem.Decode([]byte(privateKeyPEM))
+//	if block == nil {
+//		return nil, errors.New("failed to parse PEM block containing the key")
+//	}
+//
+//	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+//	if err != nil {
+//		return nil, fmt.Errorf("error in parse RSA Private key from bytes: %w", err)
+//	}
+//
+//	return privateKey, nil
+// }
 
 func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(pubkey)
@@ -63,25 +64,23 @@ func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
 	return string(publicKeyPEM), nil
 }
 
-func parseRSAPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
-	block, _ := pem.Decode([]byte(pubPEM))
-	if block == nil {
-		return nil, errors.New("failed to parse PEM block containing the key")
-	}
-
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	switch pub := pub.(type) {
-	case *rsa.PublicKey:
-		return pub, nil
-	default:
-		break // fall through
-	}
-	return nil, errors.New("key type is not RSA")
-}
+// func parseRSAPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
+//	block, _ := pem.Decode([]byte(pubPEM))
+//	if block == nil {
+//		return nil, errors.New("failed to parse PEM block containing the key")
+//	}
+//
+//	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	publicKey, ok := pub.(*rsa.PublicKey)
+//	if ok {
+//		return publicKey, nil
+//	}
+//	return nil, errors.New("key type is not RSA")
+// }
 
 func createRSAKeysDir() (string, error) {
 	currentPath, err := os.Executable()
@@ -91,7 +90,7 @@ func createRSAKeysDir() (string, error) {
 	currentDir := filepath.Dir(currentPath)
 	rsaKeysDir := filepath.Join(currentDir, rsaKeysDirName)
 	if _, err = os.Stat(rsaKeysDir); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(rsaKeysDir, 0777)
+		err = os.Mkdir(rsaKeysDir, 0o777)
 		if err != nil {
 			return "", fmt.Errorf("error in create rsa keys directory: %w", err)
 		}
@@ -100,11 +99,11 @@ func createRSAKeysDir() (string, error) {
 }
 
 func writeRSAKeys(privateKey string, publicKey string, keysDir string) (err error) {
-	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), 0644)
+	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), 0o644)
 	if err != nil {
 		return fmt.Errorf("error in write public RSA key in file: %w", err)
 	}
-	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), 0644)
+	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), 0o644)
 	if err != nil {
 		return fmt.Errorf("error in write private RSA key in file: %w", err)
 	}
@@ -124,7 +123,8 @@ func main() {
 	_, publicKeyErr := os.Stat(publicRSAKeyPath)
 	_, privateKeyErr := os.Stat(privateRSAKeyPath)
 
-	if errors.Is(publicKeyErr, os.ErrNotExist) || errors.Is(privateKeyErr, os.ErrNotExist) {
+	switch {
+	case errors.Is(publicKeyErr, os.ErrNotExist) || errors.Is(privateKeyErr, os.ErrNotExist):
 		fmt.Println("Create new RSA keys")
 		// создаём новые приватный и публичный RSA-ключи
 		privateKey, publicKey := generateRsaKeyPair()
@@ -138,11 +138,11 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else if publicKeyErr != nil || privateKeyErr != nil {
+	case publicKeyErr != nil || privateKeyErr != nil:
 		errorMsg := fmt.Sprintf("error in check public RSA key: %s\n"+
 			"error in check private RSA key: %s\n", publicKeyErr.Error(), privateKeyErr.Error())
 		log.Fatal(errorMsg)
-	} else {
+	default:
 		fmt.Println("All OK")
 	}
 }
