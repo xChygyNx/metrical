@@ -179,7 +179,7 @@ func createMetricDB(connectInfo string) (*sql.DB, error) {
 }
 
 // GetSyncInfo возвращает структуру с информацие о параметрах хранения присланных метрик на сервере.
-func GetSyncInfo(conf Config) (*types.SyncInfo, error) {
+func GetSyncInfo(conf *Config) (*types.SyncInfo, error) {
 	var db *sql.DB
 	var err error
 	if conf.DBAddress != "" {

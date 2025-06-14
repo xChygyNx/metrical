@@ -90,7 +90,7 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 		}
 	}
 
-	syncInfo, err = GetSyncInfo(*config)
+	syncInfo, err = GetSyncInfo(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error in GetSyncInfo: %w", err)
 	}

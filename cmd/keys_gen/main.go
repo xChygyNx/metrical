@@ -35,7 +35,7 @@ func exportRSAPrivateKeyAsPemStr(privateKey *rsa.PrivateKey) string {
 	return string(privateKeyPem)
 }
 
-// func parseRSAPrivateKeyFromPemStr(privateKeyPEM string) (*rsa.PrivateKey, error) {
+// Func parseRSAPrivateKeyFromPemStr(privateKeyPEM string) (*rsa.PrivateKey, error) {
 //	block, _ := pem.Decode([]byte(privateKeyPEM))
 //	if block == nil {
 //		return nil, errors.New("failed to parse PEM block containing the key")
@@ -47,7 +47,7 @@ func exportRSAPrivateKeyAsPemStr(privateKey *rsa.PrivateKey) string {
 //	}
 //
 //	return privateKey, nil
-// }
+// }.
 
 func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
 	publicKeyBytes, err := x509.MarshalPKIXPublicKey(pubkey)
@@ -64,7 +64,7 @@ func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
 	return string(publicKeyPEM), nil
 }
 
-// func parseRSAPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
+// Func parseRSAPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
 //	block, _ := pem.Decode([]byte(pubPEM))
 //	if block == nil {
 //		return nil, errors.New("failed to parse PEM block containing the key")
@@ -80,7 +80,7 @@ func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
 //		return publicKey, nil
 //	}
 //	return nil, errors.New("key type is not RSA")
-// }
+// }.
 
 func createRSAKeysDir() (string, error) {
 	currentPath, err := os.Executable()
@@ -90,7 +90,7 @@ func createRSAKeysDir() (string, error) {
 	currentDir := filepath.Dir(currentPath)
 	rsaKeysDir := filepath.Join(currentDir, rsaKeysDirName)
 	if _, err = os.Stat(rsaKeysDir); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(rsaKeysDir, 0o777)
+		err = os.Mkdir(rsaKeysDir, 0o750)
 		if err != nil {
 			return "", fmt.Errorf("error in create rsa keys directory: %w", err)
 		}
@@ -99,11 +99,11 @@ func createRSAKeysDir() (string, error) {
 }
 
 func writeRSAKeys(privateKey string, publicKey string, keysDir string) (err error) {
-	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), 0o644)
+	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), 0o600)
 	if err != nil {
 		return fmt.Errorf("error in write public RSA key in file: %w", err)
 	}
-	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), 0o644)
+	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), 0o600)
 	if err != nil {
 		return fmt.Errorf("error in write private RSA key in file: %w", err)
 	}
