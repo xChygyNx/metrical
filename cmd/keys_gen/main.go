@@ -66,24 +66,6 @@ func exportRSAPublicKeyAsPemStr(pubkey *rsa.PublicKey) (string, error) {
 	return string(publicKeyPEM), nil
 }
 
-// Func parseRSAPublicKeyFromPemStr(pubPEM string) (*rsa.PublicKey, error) {
-//	block, _ := pem.Decode([]byte(pubPEM))
-//	if block == nil {
-//		return nil, errors.New("failed to parse PEM block containing the key")
-//	}
-//
-//	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	publicKey, ok := pub.(*rsa.PublicKey)
-//	if ok {
-//		return publicKey, nil
-//	}
-//	return nil, errors.New("key type is not RSA")
-// }.
-
 func createRSAKeysDir() (string, error) {
 	currentPath, err := os.Executable()
 	if err != nil {

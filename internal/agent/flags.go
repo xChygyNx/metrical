@@ -11,6 +11,7 @@ import (
 // Config структура для хранения параметров агента, считанных
 // из командной строки.
 type Config struct {
+	RSAPublicKey   string   // Путь до файла с публичным ключом.
 	HostPort       HostPort // хост и порт для отправки собранных метрик в формате "host:port".
 	PollInterval   int      // интервал времени для сбора метрик в секундах.
 	ReportInterval int      // интервал времени для отправки метрик на сервер в секундах.
@@ -50,6 +51,7 @@ func parseFlag() *Config {
 	defaultReportInterval := 10
 	pollInterval := flag.Int("p", defaultPollInterval, "Interval of collect metrics in seconds")
 	reportInterval := flag.Int("r", defaultReportInterval, "Interval of send metrics on server in seconds")
+	publicRSAKey := flag.String("crypto-key", "", "Path to RSA public key")
 
 	hostPort := new(HostPort)
 	flag.Var(hostPort, "a", "Net address host:port")
@@ -57,6 +59,7 @@ func parseFlag() *Config {
 	flag.Parse()
 	agentConfig.PollInterval = *pollInterval
 	agentConfig.ReportInterval = *reportInterval
+	agentConfig.RSAPublicKey = *publicRSAKey
 
 	if hostPort.Host == "" && hostPort.Port == 0 {
 		hostPort.Host = "localhost"

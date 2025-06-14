@@ -44,5 +44,10 @@ func GetConfig() (*Config, error) {
 		}
 	}
 
+	publicKey, ok := os.LookupEnv("CRYPTO_KEY")
+	if ok {
+		config.RSAPublicKey = publicKey
+	}
+
 	return config, nil
 }
