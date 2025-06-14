@@ -41,6 +41,7 @@ type Config struct {
 	// сохраняются на диск или в БД.
 	Restore bool // флаг, определяющий, загружать или нет ранее сохранённые значения из указанного
 	// файла или БД при старте сервера.
+	RSAPrivateKey string // путь до приватного ключа
 }
 
 // String представляет данные из структуры HostPort в текстовом формате "host:port".
@@ -55,8 +56,10 @@ func (conf *Config) String() string {
 			"FileStoragePath: %s\n"+
 			"Restore: %t\n"+
 			"Host: %s:%d\n"+
-			"DBAddress:%s",
-		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port, conf.DBAddress)
+			"DBAddress: %s\n"+
+			"RSAPrivateKey: %s\n",
+		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port, conf.DBAddress,
+		conf.RSAPrivateKey)
 }
 
 // Set считывет данные из строки формата "host:port" в структуру HostPort.
@@ -84,6 +87,7 @@ func parseFlag() *Config {
 	flag.StringVar(&config.FileStoragePath, "f", "", "File path for store metrics")
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
 	flag.StringVar(&config.DBAddress, "d", "", "Address of connecting to Data Base")
+	flag.StringVar(&config.RSAPrivateKey, "crypto-key", "", "Path to RSA private key")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
@@ -140,6 +144,11 @@ func GetConfig() (*Config, error) {
 	dBAddress, ok := os.LookupEnv("DATABASE_DSN")
 	if ok {
 		config.DBAddress = dBAddress
+	}
+
+	privateKey, ok := os.LookupEnv("CRYPTO_KEY")
+	if ok {
+		config.RSAPrivateKey = privateKey
 	}
 
 	return config, nil
