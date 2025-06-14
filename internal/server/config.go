@@ -34,14 +34,12 @@ type HostPort struct {
 
 // Config структура для хранение конфигураций сервера.
 type Config struct {
-	FileStoragePath string   // путь до файла для хранения метрик.
-	DBAddress       string   // адрес для подключения к БД PostgreSQL.
-	HostPort        HostPort // хост и порт на котором запущен сервет в формате "host:port".
-	StoreInterval   int      // интервал времени в секундах, по истечении которого текущие показания сервера
-	// сохраняются на диск или в БД.
-	Restore bool // флаг, определяющий, загружать или нет ранее сохранённые значения из указанного
-	// файла или БД при старте сервера.
-	RSAPrivateKey string // путь до приватного ключа
+	FileStoragePath string
+	DBAddress       string
+	RSAPrivateKey   string
+	HostPort        HostPort
+	StoreInterval   int
+	Restore         bool
 }
 
 // String представляет данные из структуры HostPort в текстовом формате "host:port".

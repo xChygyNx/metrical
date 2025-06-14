@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	directoryPerm         = 0o750
+	filePerm              = 0o600
 	keyByteSize           = 4096
 	privateRSAKeyFileName = "rsa_key"
 	publicRSAKeyFileName  = "rsa_key.pub"
@@ -90,7 +92,7 @@ func createRSAKeysDir() (string, error) {
 	currentDir := filepath.Dir(currentPath)
 	rsaKeysDir := filepath.Join(currentDir, rsaKeysDirName)
 	if _, err = os.Stat(rsaKeysDir); errors.Is(err, os.ErrNotExist) {
-		err = os.Mkdir(rsaKeysDir, 0o750)
+		err = os.Mkdir(rsaKeysDir, directoryPerm)
 		if err != nil {
 			return "", fmt.Errorf("error in create rsa keys directory: %w", err)
 		}
@@ -99,11 +101,11 @@ func createRSAKeysDir() (string, error) {
 }
 
 func writeRSAKeys(privateKey string, publicKey string, keysDir string) (err error) {
-	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), 0o600)
+	err = os.WriteFile(filepath.Join(keysDir, publicRSAKeyFileName), []byte(publicKey), filePerm)
 	if err != nil {
 		return fmt.Errorf("error in write public RSA key in file: %w", err)
 	}
-	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), 0o600)
+	err = os.WriteFile(filepath.Join(keysDir, privateRSAKeyFileName), []byte(privateKey), filePerm)
 	if err != nil {
 		return fmt.Errorf("error in write private RSA key in file: %w", err)
 	}
