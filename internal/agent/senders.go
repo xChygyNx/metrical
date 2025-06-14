@@ -154,12 +154,12 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, hostAddr
 		return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 	}
 
-	// compressJSON, err := compress(jsonString)
-	// if err != nil {
-	//	 return fmt.Errorf("error in compress gauge metrics: %w", err)
-	// }
+	compressJSON, err := compress(jsonString)
+	if err != nil {
+		return fmt.Errorf("error in compress gauge metrics: %w", err)
+	}
 
-	req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(jsonString))
+	req, err := http.NewRequest(http.MethodPost, urlString, bytes.NewBuffer(compressJSON))
 	if err != nil {
 		return fmt.Errorf("failed to create http Request: %w", err)
 	}
@@ -209,11 +209,11 @@ func BatchSendCounter(client *pester.Client, pollCount int, hostAddr HostPort) (
 	if err != nil {
 		return fmt.Errorf("error in serialize json for counter metric: %w", err)
 	}
-	// compressJSON, err := compress(jsonString)
-	// if err != nil {
-	//	 return fmt.Errorf("error in compress counter metrics: %w", err)
-	// }
-	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(jsonString))
+	compressJSON, err := compress(jsonString)
+	if err != nil {
+		return fmt.Errorf("error in compress counter metrics: %w", err)
+	}
+	req, err := http.NewRequest(http.MethodPost, counterPath, bytes.NewBuffer(compressJSON))
 	if err != nil {
 		return
 	}
