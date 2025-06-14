@@ -8,9 +8,9 @@ import (
 	"strings"
 )
 
-// AgentConfig структура для хранения параметров агента, считанных
+// Config структура для хранения параметров агента, считанных
 // из командной строки.
-type AgentConfig struct {
+type Config struct {
 	HostPort       HostPort // хост и порт для отправки собранных метрик в формате "host:port".
 	PollInterval   int      // интервал времени для сбора метрик в секундах.
 	ReportInterval int      // интервал времени для отправки метрик на сервер в секундах.
@@ -44,8 +44,8 @@ func (hp *HostPort) Set(value string) error {
 	return nil
 }
 
-func parseFlag() *AgentConfig {
-	agentConfig := new(AgentConfig)
+func parseFlag() *Config {
+	agentConfig := new(Config)
 	defaultPollInterval := 2
 	defaultReportInterval := 10
 	pollInterval := flag.Int("p", defaultPollInterval, "Interval of collect metrics in seconds")
