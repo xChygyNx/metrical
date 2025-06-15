@@ -20,7 +20,7 @@ func parseRSAPublicKeyFromPemStr(pubPEM []byte) (*rsa.PublicKey, error) {
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse RSA public key from blok: %w", err)
 	}
 
 	publicKey, ok := pub.(*rsa.PublicKey)
@@ -33,20 +33,19 @@ func parseRSAPublicKeyFromPemStr(pubPEM []byte) (*rsa.PublicKey, error) {
 func encodeDataRSA(data []byte, rsaPublicKeyFile string) ([]byte, error) {
 	pubPEM, err := os.ReadFile(rsaPublicKeyFile)
 	if err != nil {
-		return nil, fmt.Errorf("error in read file %s: %w\n", rsaPublicKeyFile, err)
+		return nil, fmt.Errorf("error in read file %s: %w", rsaPublicKeyFile, err)
 	}
 
 	publicKey, err := parseRSAPublicKeyFromPemStr(pubPEM)
 	if err != nil {
-		return nil, fmt.Errorf("error in parse RSA public key")
+		return nil, errors.New("error in parse RSA public key")
 	}
 
 	label := []byte("OAEP Encrypted")
 	rng := rand.Reader
-	fmt.Printf("Data length: %v\n", len(data))
 	ciphertext, err := rsa.EncryptOAEP(sha256.New(), rng, publicKey, data, label)
 	if err != nil {
-		return nil, fmt.Errorf("error in cipher data: %w\n", err)
+		return nil, fmt.Errorf("error in cipher data: %w", err)
 	}
 	result := []byte(base64.StdEncoding.EncodeToString(ciphertext))
 	return result, nil
