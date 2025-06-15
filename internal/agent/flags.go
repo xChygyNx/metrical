@@ -12,9 +12,18 @@ import (
 // из командной строки.
 type Config struct {
 	RSAPublicKey   string   // Путь до файла с публичным ключом.
+	ConfigFile     string   // JSON файл с конфигурацией сервера
 	HostPort       HostPort // хост и порт для отправки собранных метрик в формате "host:port".
 	PollInterval   int      // интервал времени для сбора метрик в секундах.
 	ReportInterval int      // интервал времени для отправки метрик на сервер в секундах.
+}
+
+// TmpConfig структура для хранения параметров агента, считанных из JSON файла.
+type TmpConfig struct {
+	RSAPublicKey   string `json:"crypto_key"`      // Путь до файла с публичным ключом.
+	HostPort       string `json:"address"`         // хост и порт для отправки собранных метрик в формате "host:port".
+	PollInterval   int    `json:"poll_interval"`   // интервал времени для сбора метрик в секундах.
+	ReportInterval int    `json:"report_interval"` // интервал времени для отправки метрик на сервер в секундах.
 }
 
 // HostPort структура для хранения адреса сервера, куда будут отправляться собранные метрики.
