@@ -37,6 +37,7 @@ type Config struct {
 	FileStoragePath string   // Путь до файла для сохранения метрик.
 	DBAddress       string   // Строка подключения к базе данных PostgreSQL.
 	RSAPrivateKey   string   // Путь до файла с приватным ключом.
+	ConfigFile      string   // JSON файл с конфигурацией сервера
 	HostPort        HostPort // Адрес сервера.
 	StoreInterval   int      // Интервал сохранения метрик
 	Restore         bool     // Флаг загрузки метрик из хранилища при старте сервера
@@ -86,6 +87,7 @@ func parseFlag() *Config {
 	flag.BoolVar(&config.Restore, "r", true, "Define should or not load store data from file before start")
 	flag.StringVar(&config.DBAddress, "d", "", "Address of connecting to Data Base")
 	flag.StringVar(&config.RSAPrivateKey, "crypto-key", "", "Path to RSA private key")
+	flag.StringVar(&config.RSAPrivateKey, "crypto-key", "", "Path to RSA private key")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
@@ -103,8 +105,15 @@ func parseFlag() *Config {
 // Приоритет источников для задания параметров агента:
 // 1) Переменные окружения.
 // 2) Аргументы командной строки.
+// 3) Файл конфигурации из параметра -c/-config или переменной окружения CONFIG
 func GetConfig() (*Config, error) {
 	config := parseFlag()
+
+	//configFileEnv, ok := os.LookupEnv("CONFIG")
+	//configFileArg := config.
+	//if ok {
+	//
+	//}
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")
 	if ok {
