@@ -165,7 +165,7 @@ func parseConfigFromJSON(configFile string, config *Config) (*Config, error) {
 // Приоритет источников для задания параметров агента:
 // 1) Переменные окружения.
 // 2) Аргументы командной строки.
-// 3) Файл конфигурации из параметра -c/-config или переменной окружения CONFIG
+// 3) Файл конфигурации из параметра -c/-config или переменной окружения CONFIG.
 func GetConfig() (config *Config, err error) {
 	config = parseFlag()
 
