@@ -139,7 +139,6 @@ func SendCounter(client *pester.Client, pollCount int, config *Config) (err erro
 // повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
 // обратиться к администратору системы).
 func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *Config) (err error) {
-	fmt.Println("I'm in BatchSendGauge")
 	hostAddr := config.HostPort
 	sendData := make([]types.Metrics, 0, countGaugeMetrics)
 	urlString := "http://" + hostAddr.String() + "/updates/"
@@ -158,7 +157,6 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 		return fmt.Errorf("error in serialize json for send gauge metric: %w", err)
 	}
 
-	fmt.Printf("Public key file: %s\n", config.RSAPublicKey)
 	if config.RSAPublicKey != "" {
 		jsonString, err = encodeDataRSA(jsonString, config.RSAPublicKey)
 		if err != nil {

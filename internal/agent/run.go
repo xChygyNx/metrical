@@ -3,8 +3,10 @@
 package agent
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"runtime"
 	"time"
 
@@ -59,7 +61,7 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 
 // Run запускает агент по сбору метрик системы, который в соответсвии с заданной
 // в конфигурации интервалами времени собирает и отсылает метрики системы на сервер.
-func Run() error {
+func Run(sigs chan os.Signal) error {
 	var pollCount int
 	var memStats runtime.MemStats
 
@@ -69,7 +71,11 @@ func Run() error {
 	}
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
-	for {
+
+	var interrupt bool
+	var signal os.Signal
+	for !interrupt {
+		fmt.Printf("interrupt: %v\n", interrupt)
 		select {
 		case <-pollTicker.C:
 			runtime.ReadMemStats(&memStats)
@@ -103,6 +109,37 @@ func Run() error {
 			}
 
 			pollCount = 0
+
+		case signal = <-sigs:
+			interrupt = true
+			sendInfo := prepareStatsForSend(&memStats)
+			client := getRetryClient()
+
+			// Err = SendGauge(client, sendInfo, config)
+			// if err != nil {
+			//	log.Printf("error in send gauge: %v\n", err)
+			//	continue
+			// }
+			//
+			// err = SendCounter(client, pollCount, config)
+			// if err != nil {
+			//	log.Printf("error in send counter: %v\n", err)
+			//	continue
+			// }.
+
+			err = BatchSendGauge(client, sendInfo, config)
+			if err != nil {
+				log.Printf("error in batch send gauge: %v\n", err)
+				continue
+			}
+
+			err = BatchSendCounter(client, pollCount, config)
+			if err != nil {
+				log.Printf("error in batch send counter: %v\n", err)
+				continue
+			}
+
 		}
 	}
+	return fmt.Errorf("agent get signal %v", signal)
 }
