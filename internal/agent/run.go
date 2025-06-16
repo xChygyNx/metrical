@@ -138,7 +138,6 @@ func Run(sigs chan os.Signal) error {
 				log.Printf("error in batch send counter: %v\n", err)
 				continue
 			}
-
 		}
 	}
 	return fmt.Errorf("agent get signal %v", signal)
