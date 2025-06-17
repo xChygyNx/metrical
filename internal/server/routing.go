@@ -3,10 +3,12 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -100,7 +102,7 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 
 // Routing запускает сервер по приему http запросов на сохранение метрик в хранилища
 // указанные в конфигурации.
-func Routing() (err error) {
+func Routing(sigs chan os.Signal) (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -132,9 +134,26 @@ func Routing() (err error) {
 
 	router := getChiRouter(storage, syncInfo, config, sugar)
 
+	server := &http.Server{
+		Addr:    config.HostPort.String(),
+		Handler: router,
+	}
+
+	connsClosed := make(chan struct{})
+	go func() {
+		<-sigs
+
+		if err := server.Shutdown(context.Background()); err != nil {
+			fmt.Println(fmt.Errorf("error in shutdown server: %w", err).Error())
+		}
+		close(connsClosed)
+	}()
+
 	err = http.ListenAndServe(config.HostPort.String(), router)
-	if err != nil {
+	if !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error with launch http server: %w", err)
 	}
+
+	<-connsClosed
 	return
 }
