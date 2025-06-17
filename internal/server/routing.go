@@ -139,14 +139,12 @@ func Routing(sigs chan os.Signal) (err error) {
 		Handler: router,
 	}
 
-	connsClosed := make(chan struct{})
 	go func() {
 		<-sigs
 
 		if err := server.Shutdown(context.Background()); err != nil {
 			fmt.Println(fmt.Errorf("error in shutdown server: %w", err).Error())
 		}
-		close(connsClosed)
 	}()
 
 	err = server.ListenAndServe()
@@ -154,6 +152,5 @@ func Routing(sigs chan os.Signal) (err error) {
 		return fmt.Errorf("error with launch http server: %w", err)
 	}
 
-	<-connsClosed
 	return
 }
