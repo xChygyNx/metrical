@@ -149,7 +149,7 @@ func Routing(sigs chan os.Signal) (err error) {
 		close(connsClosed)
 	}()
 
-	err = http.ListenAndServe(config.HostPort.String(), router)
+	err = server.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error with launch http server: %w", err)
 	}
