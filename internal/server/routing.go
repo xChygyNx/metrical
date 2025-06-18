@@ -18,6 +18,11 @@ import (
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
+const (
+	readTimeoutSeconds  = 10
+	writeTimeoutSeconds = 10
+)
+
 func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc {
 	logFn := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
@@ -137,8 +142,8 @@ func Routing(sigs chan os.Signal) (err error) {
 	server := &http.Server{
 		Addr:         config.HostPort.String(),
 		Handler:      router,
-		ReadTimeout:  10 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  readTimeoutSeconds * time.Second,
+		WriteTimeout: writeTimeoutSeconds * time.Second,
 	}
 
 	go func() {
