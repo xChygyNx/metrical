@@ -135,8 +135,10 @@ func Routing(sigs chan os.Signal) (err error) {
 	router := getChiRouter(storage, syncInfo, config, sugar)
 
 	server := &http.Server{
-		Addr:    config.HostPort.String(),
-		Handler: router,
+		Addr:         config.HostPort.String(),
+		Handler:      router,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	go func() {

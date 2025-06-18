@@ -21,9 +21,12 @@ const (
 	rsaKeysDirName        = "rsa_keys"
 )
 
-func generateRsaKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
-	privateKey, _ := rsa.GenerateKey(rand.Reader, keyByteSize)
-	return privateKey, &privateKey.PublicKey
+func generateRsaKeyPair() (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	privateKey, err := rsa.GenerateKey(rand.Reader, keyByteSize)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error in generate rsa keys pair: %w", err)
+	}
+	return privateKey, &privateKey.PublicKey, nil
 }
 
 func exportRSAPrivateKeyAsPemStr(privateKey *rsa.PrivateKey) string {
@@ -111,7 +114,10 @@ func main() {
 	case errors.Is(publicKeyErr, os.ErrNotExist) || errors.Is(privateKeyErr, os.ErrNotExist):
 		fmt.Println("Create new RSA keys")
 		// создаём новые приватный и публичный RSA-ключи
-		privateKey, publicKey := generateRsaKeyPair()
+		privateKey, publicKey, err := generateRsaKeyPair()
+		if err != nil {
+			log.Fatal(err)
+		}
 		publicKeyString, err := exportRSAPublicKeyAsPemStr(publicKey)
 		if err != nil {
 			log.Fatal(err)
