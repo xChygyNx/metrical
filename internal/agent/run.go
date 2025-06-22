@@ -4,7 +4,6 @@ package agent
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	"os"
 	"runtime"
@@ -59,6 +58,36 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	return result
 }
 
+func sendReport(client *pester.Client, memStats *runtime.MemStats, pollCount int, config *Config) error {
+	sendInfo := prepareStatsForSend(memStats)
+
+	// Err = SendGauge(client, sendInfo, config)
+	// if err != nil {
+	//	log.Printf("error in send gauge: %v\n", err)
+	//	continue
+	// }
+	//
+	// err = SendCounter(client, pollCount, config)
+	// if err != nil {
+	//	log.Printf("error in send counter: %v\n", err)
+	//	continue
+	// }.
+
+	err := BatchSendGauge(client, sendInfo, config)
+	if err != nil {
+		returnErr := fmt.Errorf("error in batch send gauge: %w\n", err)
+		return returnErr
+	}
+
+	err = BatchSendCounter(client, pollCount, config)
+	if err != nil {
+		returnErr := fmt.Errorf("error in batch send counter: %w\n", err)
+		return returnErr
+	}
+
+	return nil
+}
+
 // Run запускает агент по сбору метрик системы, который в соответсвии с заданной
 // в конфигурации интервалами времени собирает и отсылает метрики системы на сервер.
 func Run(sigs chan os.Signal) error {
@@ -74,6 +103,7 @@ func Run(sigs chan os.Signal) error {
 
 	var interrupt bool
 	var signal os.Signal
+	client := getRetryClient()
 	for !interrupt {
 		fmt.Printf("interrupt: %v\n", interrupt)
 		select {
@@ -81,61 +111,18 @@ func Run(sigs chan os.Signal) error {
 			runtime.ReadMemStats(&memStats)
 			pollCount++
 		case <-reportTicker.C:
-			sendInfo := prepareStatsForSend(&memStats)
-			client := getRetryClient()
-
-			// Err = SendGauge(client, sendInfo, config)
-			// if err != nil {
-			//	log.Printf("error in send gauge: %v\n", err)
-			//	continue
-			// }
-			//
-			// err = SendCounter(client, pollCount, config)
-			// if err != nil {
-			//	log.Printf("error in send counter: %v\n", err)
-			//	continue
-			// }.
-
-			err = BatchSendGauge(client, sendInfo, config)
+			err := sendReport(client, &memStats, pollCount, config)
 			if err != nil {
-				log.Printf("error in batch send gauge: %v\n", err)
+				fmt.Printf("error in report stats: %s\n", err.Error())
 				continue
 			}
-
-			err = BatchSendCounter(client, pollCount, config)
-			if err != nil {
-				log.Printf("error in batch send counter: %v\n", err)
-				continue
-			}
-
 			pollCount = 0
 
 		case signal = <-sigs:
 			interrupt = true
-			sendInfo := prepareStatsForSend(&memStats)
-			client := getRetryClient()
-
-			// Err = SendGauge(client, sendInfo, config)
-			// if err != nil {
-			//	log.Printf("error in send gauge: %v\n", err)
-			//	continue
-			// }
-			//
-			// err = SendCounter(client, pollCount, config)
-			// if err != nil {
-			//	log.Printf("error in send counter: %v\n", err)
-			//	continue
-			// }.
-
-			err = BatchSendGauge(client, sendInfo, config)
+			err := sendReport(client, &memStats, pollCount, config)
 			if err != nil {
-				log.Printf("error in batch send gauge: %v\n", err)
-				continue
-			}
-
-			err = BatchSendCounter(client, pollCount, config)
-			if err != nil {
-				log.Printf("error in batch send counter: %v\n", err)
+				fmt.Printf("error in report stats: %s\n", err.Error())
 				continue
 			}
 		}
