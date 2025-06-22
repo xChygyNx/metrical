@@ -72,8 +72,8 @@ func applicationJSONContentTypeRequest() (*http.Request, error) {
 
 func TestIsAcceptEncoding(t *testing.T) {
 	tests := []struct {
-		name            string
 		requestCallable func() (*http.Request, error)
+		name            string
 		want            bool
 	}{
 		{
@@ -104,8 +104,8 @@ func TestIsAcceptEncoding(t *testing.T) {
 
 func TestIsContentEncoding(t *testing.T) {
 	tests := []struct {
-		name            string
 		requestCallable func() (*http.Request, error)
+		name            string
 		want            bool
 	}{
 		{
@@ -136,8 +136,8 @@ func TestIsContentEncoding(t *testing.T) {
 
 func TestIsCompressData(t *testing.T) {
 	tests := []struct {
-		name            string
 		requestCallable func() (*http.Request, error)
+		name            string
 		want            bool
 	}{
 		{

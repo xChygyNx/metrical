@@ -1,16 +1,54 @@
 package agent
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
-type config struct {
-	HostAddr       HostPort
-	PollInterval   int
-	ReportInterval int
+func getArgsWithoutDashes() map[string]bool {
+	args := make(map[string]bool, 0)
+	for _, elem := range os.Args {
+		if strings.HasPrefix(elem, "-") {
+			elem = strings.TrimLeft(elem, "-")
+			args[elem] = true
+		}
+	}
+	return args
+}
+
+func parseConfigFromJSON(configFile string, config *Config) (*Config, error) {
+	fileData, err := os.ReadFile(configFile)
+	if err != nil {
+		return nil, fmt.Errorf("error in read file %s: %w", configFile, err)
+	}
+	tmpConfig := &TmpConfig{}
+	err = json.Unmarshal(fileData, tmpConfig)
+	if err != nil {
+		return nil, fmt.Errorf("error in unmarshal json data: %w", err)
+	}
+	args := getArgsWithoutDashes()
+
+	if _, ok := args["a"]; !ok {
+		err = config.HostPort.Set(tmpConfig.HostPort)
+		if err != nil {
+			return nil, fmt.Errorf("error in parse HostPort from JSON: %w", err)
+		}
+	}
+	if _, ok := args["p"]; !ok {
+		config.PollInterval = tmpConfig.PollInterval
+	}
+	if _, ok := args["r"]; !ok {
+		config.ReportInterval = tmpConfig.ReportInterval
+	}
+	if _, ok := args["crypto-key"]; !ok {
+		config.RSAPublicKey = tmpConfig.RSAPublicKey
+	}
+
+	return config, nil
 }
 
 // GetConfig возвращает структуру config в которой заданы такие параметры
@@ -20,9 +58,23 @@ type config struct {
 // Приоритет источников для задания параметров агента:
 // 1) Переменные окружения
 // 2) Аргументы командной строки.
-func GetConfig() (*config, error) {
-	config := &config{}
-	agentConfig := parseFlag()
+func GetConfig() (config *Config, err error) {
+	config = parseFlag()
+
+	configFileEnv, ok := os.LookupEnv("CONFIG")
+	configFileArg := config.ConfigFile
+	if ok {
+		config, err = parseConfigFromJSON(configFileEnv, config)
+		if err != nil {
+			return nil, fmt.Errorf("error parse config from JSON from env: %w", err)
+		}
+	} else if configFileArg != "" {
+		config, err = parseConfigFromJSON(configFileArg, config)
+		if err != nil {
+			return nil, fmt.Errorf("error parse config from JSON from args: %w", err)
+		}
+	}
+
 	pollInterval, ok := os.LookupEnv("POLL_INTERVAL")
 	if ok {
 		res, err := strconv.Atoi(pollInterval)
@@ -31,8 +83,6 @@ func GetConfig() (*config, error) {
 			return nil, errors.New(errorMsg)
 		}
 		config.PollInterval = res
-	} else {
-		config.PollInterval = agentConfig.PollInterval
 	}
 
 	reportInterval, ok := os.LookupEnv("POLL_INTERVAL")
@@ -43,18 +93,19 @@ func GetConfig() (*config, error) {
 			return nil, errors.New(errorMsg)
 		}
 		config.ReportInterval = res
-	} else {
-		config.ReportInterval = agentConfig.ReportInterval
 	}
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")
 	if ok {
-		err := config.HostAddr.Set(hostAddr)
+		err := config.HostPort.Set(hostAddr)
 		if err != nil {
 			return nil, err
 		}
-	} else {
-		config.HostAddr = agentConfig.HostPort
+	}
+
+	publicKey, ok := os.LookupEnv("CRYPTO_KEY")
+	if ok {
+		config.RSAPublicKey = publicKey
 	}
 
 	return config, nil

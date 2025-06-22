@@ -3,10 +3,12 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -14,6 +16,11 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/xChygyNx/metrical/internal/server/types"
+)
+
+const (
+	readTimeoutSeconds  = 10
+	writeTimeoutSeconds = 10
 )
 
 func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc {
@@ -50,7 +57,7 @@ func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc 
 func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	config *Config, sugar zap.SugaredLogger) chi.Router {
 	router := chi.NewRouter()
-	// router.Use(GzipHandler)
+	router.Use(GzipHandler)
 	router.Mount("/debug", middleware.Profiler())
 
 	router.Post("/update",
@@ -90,7 +97,7 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 		}
 	}
 
-	syncInfo, err = GetSyncInfo(*config)
+	syncInfo, err = GetSyncInfo(config)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error in GetSyncInfo: %w", err)
 	}
@@ -100,7 +107,7 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 
 // Routing запускает сервер по приему http запросов на сохранение метрик в хранилища
 // указанные в конфигурации.
-func Routing() (err error) {
+func Routing(sigs chan os.Signal) (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -132,9 +139,25 @@ func Routing() (err error) {
 
 	router := getChiRouter(storage, syncInfo, config, sugar)
 
-	err = http.ListenAndServe(config.HostPort.String(), router)
-	if err != nil {
+	server := &http.Server{
+		Addr:         config.HostPort.String(),
+		Handler:      router,
+		ReadTimeout:  readTimeoutSeconds * time.Second,
+		WriteTimeout: writeTimeoutSeconds * time.Second,
+	}
+
+	go func() {
+		<-sigs
+
+		if err := server.Shutdown(context.Background()); err != nil {
+			fmt.Println(fmt.Errorf("error in shutdown server: %w", err).Error())
+		}
+	}()
+
+	err = server.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error with launch http server: %w", err)
 	}
+
 	return
 }

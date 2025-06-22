@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	_ "net/http/pprof" // требуется для запуска профилировщика
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/xChygyNx/metrical/internal/server"
 )
@@ -21,7 +24,10 @@ func main() {
 	fmt.Printf("Build version: %s\n", buildVersion)
 	fmt.Printf("Build date: %s\n", buildDate)
 	fmt.Printf("Build commit: %s\n", buildCommit)
-	err := server.Routing()
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	err := server.Routing(sigs)
 
 	if err != nil {
 		log.Fatal(err)
