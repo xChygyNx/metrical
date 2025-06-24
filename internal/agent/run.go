@@ -75,13 +75,13 @@ func sendReport(client *pester.Client, memStats *runtime.MemStats, pollCount int
 
 	err := BatchSendGauge(client, sendInfo, config)
 	if err != nil {
-		returnErr := fmt.Errorf("error in batch send gauge: %w\n", err)
+		returnErr := fmt.Errorf("error in batch send gauge: %w", err)
 		return returnErr
 	}
 
 	err = BatchSendCounter(client, pollCount, config)
 	if err != nil {
-		returnErr := fmt.Errorf("error in batch send counter: %w\n", err)
+		returnErr := fmt.Errorf("error in batch send counter: %w", err)
 		return returnErr
 	}
 
