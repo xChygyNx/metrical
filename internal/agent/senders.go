@@ -22,21 +22,21 @@ const (
 	contentEncoding      = "Content-Encoding"
 	contentEncodingValue = "gzip"
 	countGaugeMetrics    = 28
-	realIpHeader         = "X-Real-IP"
+	getIPErrorText       = "error in get own IP address: %w"
+	realIPHeader         = "X-Real-IP"
 	responseStatusMsg    = "response Status: "
 	responseHeadersMsg   = "response Headers: "
 	responseBodyMsg      = "response Body: "
 )
 
-// GetOutboundIP возвращает IP адрес хоста, на котором запущем агент
+// GetOutboundIP возвращает IP адрес хоста, на котором запущем агент.
 func GetOutboundIP() (ip net.IP, err error) {
 	conn, err := net.Dial("udp", "8.8.8.8:80")
 	if err != nil {
 		return nil, fmt.Errorf("error in set UDP connection: %w", err)
 	}
-	defer func() error {
+	defer func() {
 		err = conn.Close()
-		return err
 	}()
 
 	localAddr := conn.LocalAddr().(*net.UDPAddr)
@@ -76,9 +76,9 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *Confi
 		req.Header.Set(contentEncoding, contentEncodingValue)
 		ip, err := GetOutboundIP()
 		if err != nil {
-			return fmt.Errorf("error in get own IP address: %w", err)
+			return fmt.Errorf(getIPErrorText, err)
 		}
-		req.Header.Set(realIpHeader, ip.String())
+		req.Header.Set(realIPHeader, ip.String())
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -142,9 +142,9 @@ func SendCounter(client *pester.Client, pollCount int, config *Config) (err erro
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	ip, err := GetOutboundIP()
 	if err != nil {
-		return fmt.Errorf("error in get own IP address: %w", err)
+		return fmt.Errorf(getIPErrorText, err)
 	}
-	req.Header.Set(realIpHeader, ip.String())
+	req.Header.Set(realIPHeader, ip.String())
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -206,9 +206,9 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	ip, err := GetOutboundIP()
 	if err != nil {
-		return fmt.Errorf("error in get own IP address: %w", err)
+		return fmt.Errorf(getIPErrorText, err)
 	}
-	req.Header.Set(realIpHeader, ip.String())
+	req.Header.Set(realIPHeader, ip.String())
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -274,9 +274,9 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *Config) (err
 	req.Header.Set(contentEncoding, contentEncodingValue)
 	ip, err := GetOutboundIP()
 	if err != nil {
-		return fmt.Errorf("error in get own IP address: %w", err)
+		return fmt.Errorf(getIPErrorText, err)
 	}
-	req.Header.Set(realIpHeader, ip.String())
+	req.Header.Set(realIPHeader, ip.String())
 	resp, err := client.Do(req)
 	if err != nil {
 		return

@@ -7,7 +7,7 @@ import (
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
-func isIpInSubnet(addr string, conf *types.SyncInfo) (res bool, err error) {
+func isIPInSubnet(addr string, conf *types.SyncInfo) (res bool, err error) {
 	cidr := conf.TrustedSubnet
 
 	if cidr != "" {
