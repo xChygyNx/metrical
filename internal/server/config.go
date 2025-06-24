@@ -39,19 +39,21 @@ type Config struct {
 	DBAddress       string   `json:"database_dsn"` // Строка подключения к базе данных PostgreSQL.
 	RSAPrivateKey   string   `json:"crypto_key"`   // Путь до файла с приватным ключом.
 	ConfigFile      string   // JSON файл с конфигурацией сервера
-	HostPort        HostPort `json:"address"`       // Адрес сервера.
-	StoreInterval   int      `json:"storeInterval"` // Интервал сохранения метрик
-	Restore         bool     `json:"restore"`       // Флаг загрузки метрик из хранилища при старте сервера
+	TrustedSubnet   string   `json:"trusted_subnet"` // Доверенная подсеть
+	HostPort        HostPort `json:"address"`        // Адрес сервера.
+	StoreInterval   int      `json:"storeInterval"`  // Интервал сохранения метрик
+	Restore         bool     `json:"restore"`        // Флаг загрузки метрик из хранилища при старте сервера
 }
 
 // TmpConfig структура для хранения параметров сервера, считанных из JSON файла.
 type TmpConfig struct {
-	FileStoragePath string `json:"store_file"`    // Путь до файла для сохранения метрик.
-	DBAddress       string `json:"database_dsn"`  // Строка подключения к базе данных PostgreSQL.
-	RSAPrivateKey   string `json:"crypto_key"`    // Путь до файла с приватным ключом.
-	HostPort        string `json:"address"`       // Адрес сервера.
-	StoreInterval   int    `json:"storeInterval"` // Интервал сохранения метрик
-	Restore         bool   `json:"restore"`       // Флаг загрузки метрик из хранилища при старте сервера
+	FileStoragePath string `json:"store_file"`     // Путь до файла для сохранения метрик.
+	DBAddress       string `json:"database_dsn"`   // Строка подключения к базе данных PostgreSQL.
+	RSAPrivateKey   string `json:"crypto_key"`     // Путь до файла с приватным ключом.
+	HostPort        string `json:"address"`        // Адрес сервера.
+	TrustedSubnet   string `json:"trusted_subnet"` // Доверенная подсеть
+	StoreInterval   int    `json:"storeInterval"`  // Интервал сохранения метрик
+	Restore         bool   `json:"restore"`        // Флаг загрузки метрик из хранилища при старте сервера
 }
 
 // String представляет данные из структуры HostPort в текстовом формате "host:port".
@@ -100,6 +102,7 @@ func parseFlag() *Config {
 	flag.StringVar(&config.RSAPrivateKey, "crypto-key", "", "Path to RSA private key")
 	flag.StringVar(&config.ConfigFile, "config", "", "Path to JSON config file")
 	flag.StringVar(&config.ConfigFile, "c", "", "Path to JSON config file")
+	flag.StringVar(&config.TrustedSubnet, "t", "", "Trusted subnet")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
@@ -148,6 +151,9 @@ func parseConfigFromJSON(configFile string, config *Config) (*Config, error) {
 	}
 	if _, ok := args["d"]; !ok {
 		config.DBAddress = tmpConfig.DBAddress
+	}
+	if _, ok := args["t"]; !ok {
+		config.TrustedSubnet = tmpConfig.TrustedSubnet
 	}
 	if _, ok := args["crypto-key"]; !ok {
 		config.RSAPrivateKey = tmpConfig.RSAPrivateKey
@@ -219,6 +225,11 @@ func GetConfig() (config *Config, err error) {
 	dBAddress, ok := os.LookupEnv("DATABASE_DSN")
 	if ok {
 		config.DBAddress = dBAddress
+	}
+
+	trustSubnet, ok := os.LookupEnv("TRUSTED_SUBNET")
+	if ok {
+		config.TrustedSubnet = trustSubnet
 	}
 
 	privateKey, ok := os.LookupEnv("CRYPTO_KEY")
