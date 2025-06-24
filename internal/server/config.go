@@ -278,5 +278,6 @@ func GetSyncInfo(conf *Config) (*types.SyncInfo, error) {
 		DB:                db,
 		FileMetricStorage: conf.FileStoragePath,
 		SyncFileRecord:    conf.StoreInterval == 0,
+		TrustedSubnet:     conf.TrustedSubnet,
 	}, nil
 }

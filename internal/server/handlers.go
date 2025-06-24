@@ -27,6 +27,7 @@ const (
 	internalServerErrorMsg = "Internal server error"
 	errorMsgWildcard       = "%s %w"
 	jsonContentType        = "application/json"
+	realIpHeader           = "X-Real-IP"
 	retryDBWriteCount      = 4
 	retryFileWriteCount    = 4
 	textContentType        = "text/plain"
@@ -63,8 +64,32 @@ func saveMetricValue(mType, mName, value string, storage *types.MemStorage) (err
 	return
 }
 
-func pingDBHandle(dBAddress string) http.HandlerFunc {
+func getIpFromHeader(r *http.Request) string {
+	ip := r.Header.Get(realIpHeader)
+	return ip
+}
+
+func pingDBHandle(dBAddress string, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		db, err := sql.Open("pgx", dBAddress)
 		if err != nil {
 			errorMsg := fmt.Errorf("can't connect to DB videos: %w", err)
@@ -101,6 +126,25 @@ func pingDBHandle(dBAddress string) http.HandlerFunc {
 // о типе, названии метрики и ее значении передаются через URL запроса.
 func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		res.Header().Set(contentType, textContentType)
 
 		metricType := req.PathValue("mType")
@@ -113,7 +157,7 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 		metricName := req.PathValue("metric")
 		metricValue := req.PathValue("value")
 
-		err := saveMetricValue(metricType, metricName, metricValue, storage)
+		err = saveMetricValue(metricType, metricName, metricValue, storage)
 		if err != nil {
 			errorMsg := fmt.Sprintf("Value of metric must be numeric, got %s, err: %v\n", metricValue, err)
 			http.Error(res, errorMsg, http.StatusBadRequest)
@@ -144,6 +188,24 @@ func SaveMetricHandleOld(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 // о типе, названии метрики и ее значении передаются в теле запроса по одной.
 func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
 		res.Header().Set(contentType, jsonContentType)
 
 		bodyByte, err := io.ReadAll(req.Body)
@@ -239,6 +301,24 @@ func SaveMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.
 // за раз в виде JSON.
 func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
 		res.Header().Set(contentType, jsonContentType)
 
 		bodyByte, err := io.ReadAll(req.Body)
@@ -336,8 +416,27 @@ func getMetricValue(mType, mName string, storage *types.MemStorage) (num interfa
 
 // GetMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
 // метрики значение которой необходимо получить содержится в URL запроса.
-func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		res.Header().Set(contentType, textContentType)
 		metricType := req.PathValue("mType")
 		if metricType != GAUGE && metricType != COUNTER {
@@ -378,8 +477,27 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 // GetJSONMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
 // // метрики значение которой необходимо получить содержится в теле запроса.
-func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetJSONMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		res.Header().Set(contentType, jsonContentType)
 		bodyByte, err := io.ReadAll(req.Body)
 		defer func() {
@@ -440,8 +558,27 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 // ListMetricHandle GET запросов на получение значения одной сохраненной метрики. Возвращает
 // все сохраненные метрики в JSON виде с группировкой тип метрики/название метрики.
-func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func ListMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
+		ip := getIpFromHeader(req)
+		trusted, err := isIpInSubnet(ip, syncInfo)
+		if err != nil {
+			errorMsg := fmt.Errorf("error in define ip address enter in trusted subnet: %w", err).Error()
+			log.Println(errorMsg)
+			http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+			return
+		}
+		if !trusted {
+			res.WriteHeader(http.StatusOK)
+			_, err = res.Write([]byte("Forbidden"))
+			if err != nil {
+				errorMsg := fmt.Errorf(errorMsgWildcard, writeHandlerErrorMsg, err).Error()
+				log.Println(errorMsg)
+				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+				return
+			}
+		}
+
 		res.Header().Add(contentType, "text/html")
 
 		metricsInfo := map[string]map[string]string{
