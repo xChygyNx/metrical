@@ -39,7 +39,10 @@ func GetOutboundIP() (ip net.IP, err error) {
 		err = conn.Close()
 	}()
 
-	localAddr := conn.LocalAddr().(*net.UDPAddr)
+	localAddr, ok := conn.LocalAddr().(*net.UDPAddr)
+	if !ok {
+		return nil, fmt.Errorf("error in get own IP address: %w", err)
+	}
 
 	return localAddr.IP, nil
 }
