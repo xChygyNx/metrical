@@ -662,6 +662,7 @@ func CheckIPHandler(config *Config) func(handler http.Handler) http.Handler {
 			accepted := IPNet.Contains(ipAddr)
 			if !accepted {
 				http.Error(res, "Forbidden", http.StatusForbidden)
+				return
 			}
 			internal.ServeHTTP(res, req)
 		})
