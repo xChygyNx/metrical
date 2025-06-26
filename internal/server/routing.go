@@ -58,6 +58,7 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	config *Config, sugar zap.SugaredLogger) chi.Router {
 	router := chi.NewRouter()
 	router.Use(GzipHandler)
+	router.Use(CheckIPHandler(config))
 	router.Mount("/debug", middleware.Profiler())
 
 	router.Post("/update",
