@@ -105,7 +105,6 @@ func Run(sigs chan os.Signal) error {
 	var signal os.Signal
 	client := getRetryClient()
 	for !interrupt {
-		fmt.Printf("interrupt: %v\n", interrupt)
 		select {
 		case <-pollTicker.C:
 			runtime.ReadMemStats(&memStats)

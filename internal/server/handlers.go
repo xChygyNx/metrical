@@ -650,19 +650,21 @@ func GzipHandler(internal http.Handler) http.Handler {
 func CheckIPHandler(config *Config) func(handler http.Handler) http.Handler {
 	return func(internal http.Handler) http.Handler {
 		return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
-			_, IPNet, err := net.ParseCIDR(config.TrustedSubnet)
-			if err != nil {
-				errorMsg := fmt.Errorf("error in parse CIDR %s: %w", config.TrustedSubnet, err).Error()
-				log.Println(errorMsg)
-				http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
-				return
-			}
-			ipAddrStr := req.Header.Get(realIPHeader)
-			ipAddr := net.ParseIP(ipAddrStr)
-			accepted := IPNet.Contains(ipAddr)
-			if !accepted {
-				http.Error(res, "Forbidden", http.StatusForbidden)
-				return
+			if config.TrustedSubnet != "" {
+				_, IPNet, err := net.ParseCIDR(config.TrustedSubnet)
+				if err != nil {
+					errorMsg := fmt.Errorf("error in parse CIDR %s: %w", config.TrustedSubnet, err).Error()
+					log.Println(errorMsg)
+					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+					return
+				}
+				ipAddrStr := req.Header.Get(realIPHeader)
+				ipAddr := net.ParseIP(ipAddrStr)
+				accepted := IPNet.Contains(ipAddr)
+				if !accepted {
+					http.Error(res, "Forbidden", http.StatusForbidden)
+					return
+				}
 			}
 			internal.ServeHTTP(res, req)
 		})
