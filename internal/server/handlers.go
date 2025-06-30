@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,6 +28,7 @@ const (
 	internalServerErrorMsg = "Internal server error"
 	errorMsgWildcard       = "%s %w"
 	jsonContentType        = "application/json"
+	realIPHeader           = "X-Real-IP"
 	retryDBWriteCount      = 4
 	retryFileWriteCount    = 4
 	textContentType        = "text/plain"
@@ -336,7 +338,7 @@ func getMetricValue(mType, mName string, storage *types.MemStorage) (num interfa
 
 // GetMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
 // метрики значение которой необходимо получить содержится в URL запроса.
-func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
 		metricType := req.PathValue("mType")
@@ -378,7 +380,7 @@ func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 // GetJSONMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
 // // метрики значение которой необходимо получить содержится в теле запроса.
-func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func GetJSONMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 		bodyByte, err := io.ReadAll(req.Body)
@@ -440,7 +442,7 @@ func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 
 // ListMetricHandle GET запросов на получение значения одной сохраненной метрики. Возвращает
 // все сохраненные метрики в JSON виде с группировкой тип метрики/название метрики.
-func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
+func ListMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Add(contentType, "text/html")
 
@@ -505,4 +507,28 @@ func GzipHandler(internal http.Handler) http.Handler {
 		}
 		internal.ServeHTTP(resWriter, req)
 	})
+}
+
+func CheckIPHandler(config *Config) func(handler http.Handler) http.Handler {
+	return func(internal http.Handler) http.Handler {
+		return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			if config.TrustedSubnet != "" {
+				_, IPNet, err := net.ParseCIDR(config.TrustedSubnet)
+				if err != nil {
+					errorMsg := fmt.Errorf("error in parse CIDR %s: %w", config.TrustedSubnet, err).Error()
+					log.Println(errorMsg)
+					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+					return
+				}
+				ipAddrStr := req.Header.Get(realIPHeader)
+				ipAddr := net.ParseIP(ipAddrStr)
+				accepted := IPNet.Contains(ipAddr)
+				if !accepted {
+					http.Error(res, "Forbidden", http.StatusForbidden)
+					return
+				}
+			}
+			internal.ServeHTTP(res, req)
+		})
+	}
 }
