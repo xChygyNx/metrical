@@ -77,7 +77,7 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 		middlewareLogger(GetJSONMetricHandle(storage, syncInfo), sugar))
 	router.Post("/value/",
 		middlewareLogger(GetJSONMetricHandle(storage, syncInfo), sugar))
-	router.Get("/ping", middlewareLogger(pingDBHandle(config.DBAddress, syncInfo), sugar))
+	router.Get("/ping", middlewareLogger(pingDBHandle(config.DBAddress), sugar))
 	router.Get("/", middlewareLogger(ListMetricHandle(storage, syncInfo), sugar))
 	return router
 }
