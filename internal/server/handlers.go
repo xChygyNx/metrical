@@ -65,7 +65,7 @@ func saveMetricValue(mType, mName, value string, storage *types.MemStorage) (err
 	return
 }
 
-func pingDBHandle(dBAddress string, syncInfo *types.SyncInfo) http.HandlerFunc {
+func pingDBHandle(dBAddress string) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		db, err := sql.Open("pgx", dBAddress)
 		if err != nil {
