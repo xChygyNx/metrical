@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package server;
+
+option go_package = "internal/server";
+
+message MemStorage {
+  map<string, double> gauge = 1;  // gauge метрики
+  map<string, int64> counter = 2; // counter метрики
+}
+
+message SyncInfo {
+  string db = 1;              // строка подключения к базе данных
+  string file = 2;            // путь до файла для сохранения метрик
+  string tusted_subnet = 3;   // доверенная подсеть
+  bool sync_file_record = 4;  // атрибут определяющий, следует ли немедленно сохранять присланные метрики
+  // в файл или БД.
+}
+
+message Metric {
+  int64 delta = 1;   // изменение метики counter
+  double value = 2;  // значение метрики gauge
+  string id = 3;     // название метрики
+  string m_type = 4; // тип метрики
+}
+
+message HandlersInput {
+  MemStorage storage = 1;
+  SyncInfo sync_config = 2;
+}
+
+message BatchMetricRequest {
+  repeated Metric metrics = 1;
+}
+
+message GetJSONMetricsRequest {
+  string id = 1;    // название метрики
+}
+
+enum Status {
+  OK = 0;
+  ERROR = 1;
+}
+
+message BatchMetricResponse {
+  Status status = 1;
+}
+
+message GetJSONMetricResponse {
+  Metric metric = 1;
+}
+
+service BatchMetricHandler {
+  rpc SaveBatchMetrics(BatchMetricRequest) returns (BatchMetricResponse);
+  rpc GetJSONMetric(GetJSONMetricsRequest) returns (GetJSONMetricResponse);
+}
