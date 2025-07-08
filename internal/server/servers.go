@@ -7,6 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -14,13 +16,17 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
+	pb "github.com/xChygyNx/metrical/internal/proto"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
 const (
 	readTimeoutSeconds  = 10
 	writeTimeoutSeconds = 10
+	gRPCPortVar         = "GRPC_PORT"
+	gRPCPort            = ":3200"
 )
 
 func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc {
@@ -72,13 +78,13 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	router.Post("/update/{mType}/{metric}/{value}",
 		middlewareLogger(SaveMetricHandleOld(storage, syncInfo), sugar))
 	router.Get("/value/{mType}/{metric}",
-		middlewareLogger(GetMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(GetMetricHandle(storage), sugar))
 	router.Post("/value",
-		middlewareLogger(GetJSONMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(GetJSONMetricHandle(storage), sugar))
 	router.Post("/value/",
-		middlewareLogger(GetJSONMetricHandle(storage, syncInfo), sugar))
+		middlewareLogger(GetJSONMetricHandle(storage), sugar))
 	router.Get("/ping", middlewareLogger(pingDBHandle(config.DBAddress), sugar))
-	router.Get("/", middlewareLogger(ListMetricHandle(storage, syncInfo), sugar))
+	router.Get("/", middlewareLogger(ListMetricHandle(storage), sugar))
 	return router
 }
 
@@ -106,9 +112,9 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 	return
 }
 
-// Routing запускает сервер по приему http запросов на сохранение метрик в хранилища
+// RunHTTPServer запускает сервер по приему http запросов на сохранение метрик в хранилища
 // указанные в конфигурации.
-func Routing(sigs chan os.Signal) (err error) {
+func RunHTTPServer(ctx context.Context, sigs chan os.Signal) (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -151,13 +157,43 @@ func Routing(sigs chan os.Signal) (err error) {
 		<-sigs
 
 		if err := server.Shutdown(context.Background()); err != nil {
-			fmt.Println(fmt.Errorf("error in shutdown server: %w", err).Error())
+			fmt.Println(fmt.Errorf("error in shutdown HTTP server: %w", err).Error())
 		}
 	}()
 
 	err = server.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error with launch http server: %w", err)
+	}
+
+	return
+}
+
+// RunGRPCServer запускает сервер по приему gRPC запросов на сохранение метрик в оперативную память
+func RunGRPCServer(ctx context.Context, sigs chan os.Signal) (err error) {
+	port, ok := os.LookupEnv(gRPCPortVar)
+	if !ok {
+		port = gRPCPort
+	}
+	listen, err := net.Listen("tcp", port)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		<-sigs
+
+		if err := listen.Close(); err != nil {
+			fmt.Println(fmt.Errorf("error in shutdown gRPC server: %w", err).Error())
+		}
+	}()
+
+	s := grpc.NewServer()
+	pb.RegisterBatchMetricHandlerServer(s, &MetricServer{})
+	fmt.Println("Сервер gRPC начал работу")
+
+	if err := s.Serve(listen); err != nil {
+		return fmt.Errorf("error in serve gRPC request: %w", err)
 	}
 
 	return

@@ -22,6 +22,7 @@ const (
 	contentEncoding      = "Content-Encoding"
 	contentEncodingValue = "gzip"
 	countGaugeMetrics    = 28
+	dnsTestAddress       = "8.8.8.8:80"
 	getIPErrorText       = "error in get own IP address: %w"
 	realIPHeader         = "X-Real-IP"
 	responseStatusMsg    = "response Status: "
@@ -31,7 +32,7 @@ const (
 
 // GetOutboundIP возвращает IP адрес хоста, на котором запущем агент.
 func GetOutboundIP() (ip net.IP, err error) {
-	conn, err := net.Dial("udp", "8.8.8.8:80")
+	conn, err := net.Dial("udp", dnsTestAddress)
 	if err != nil {
 		return nil, fmt.Errorf("error in set UDP connection: %w", err)
 	}

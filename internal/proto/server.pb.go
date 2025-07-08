@@ -4,7 +4,7 @@
 // 	protoc        v6.31.1
 // source: server.proto
 
-package server
+package proto
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -255,58 +255,6 @@ func (x *Metric) GetMType() string {
 	return ""
 }
 
-type HandlersInput struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Storage       *MemStorage            `protobuf:"bytes,1,opt,name=storage,proto3" json:"storage,omitempty"`
-	SyncConfig    *SyncInfo              `protobuf:"bytes,2,opt,name=sync_config,json=syncConfig,proto3" json:"sync_config,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HandlersInput) Reset() {
-	*x = HandlersInput{}
-	mi := &file_server_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HandlersInput) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HandlersInput) ProtoMessage() {}
-
-func (x *HandlersInput) ProtoReflect() protoreflect.Message {
-	mi := &file_server_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HandlersInput.ProtoReflect.Descriptor instead.
-func (*HandlersInput) Descriptor() ([]byte, []int) {
-	return file_server_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *HandlersInput) GetStorage() *MemStorage {
-	if x != nil {
-		return x.Storage
-	}
-	return nil
-}
-
-func (x *HandlersInput) GetSyncConfig() *SyncInfo {
-	if x != nil {
-		return x.SyncConfig
-	}
-	return nil
-}
-
 type BatchMetricRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Metrics       []*Metric              `protobuf:"bytes,1,rep,name=metrics,proto3" json:"metrics,omitempty"`
@@ -316,7 +264,7 @@ type BatchMetricRequest struct {
 
 func (x *BatchMetricRequest) Reset() {
 	*x = BatchMetricRequest{}
-	mi := &file_server_proto_msgTypes[4]
+	mi := &file_server_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -328,7 +276,7 @@ func (x *BatchMetricRequest) String() string {
 func (*BatchMetricRequest) ProtoMessage() {}
 
 func (x *BatchMetricRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_proto_msgTypes[4]
+	mi := &file_server_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -341,7 +289,7 @@ func (x *BatchMetricRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchMetricRequest.ProtoReflect.Descriptor instead.
 func (*BatchMetricRequest) Descriptor() ([]byte, []int) {
-	return file_server_proto_rawDescGZIP(), []int{4}
+	return file_server_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *BatchMetricRequest) GetMetrics() []*Metric {
@@ -353,14 +301,15 @@ func (x *BatchMetricRequest) GetMetrics() []*Metric {
 
 type GetJSONMetricsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"` // название метрики
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                    // название метрики
+	MType         string                 `protobuf:"bytes,2,opt,name=m_type,json=mType,proto3" json:"m_type,omitempty"` // тип метрики
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetJSONMetricsRequest) Reset() {
 	*x = GetJSONMetricsRequest{}
-	mi := &file_server_proto_msgTypes[5]
+	mi := &file_server_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -372,7 +321,7 @@ func (x *GetJSONMetricsRequest) String() string {
 func (*GetJSONMetricsRequest) ProtoMessage() {}
 
 func (x *GetJSONMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_server_proto_msgTypes[5]
+	mi := &file_server_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -385,7 +334,7 @@ func (x *GetJSONMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetJSONMetricsRequest.ProtoReflect.Descriptor instead.
 func (*GetJSONMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_server_proto_rawDescGZIP(), []int{5}
+	return file_server_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetJSONMetricsRequest) GetId() string {
@@ -395,16 +344,24 @@ func (x *GetJSONMetricsRequest) GetId() string {
 	return ""
 }
 
+func (x *GetJSONMetricsRequest) GetMType() string {
+	if x != nil {
+		return x.MType
+	}
+	return ""
+}
+
 type BatchMetricResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Status        Status                 `protobuf:"varint,1,opt,name=status,proto3,enum=server.Status" json:"status,omitempty"`
+	Status        Status                 `protobuf:"varint,1,opt,name=status,proto3,enum=proto.Status" json:"status,omitempty"`
+	Metrics       []*Metric              `protobuf:"bytes,2,rep,name=metrics,proto3" json:"metrics,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *BatchMetricResponse) Reset() {
 	*x = BatchMetricResponse{}
-	mi := &file_server_proto_msgTypes[6]
+	mi := &file_server_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -416,7 +373,7 @@ func (x *BatchMetricResponse) String() string {
 func (*BatchMetricResponse) ProtoMessage() {}
 
 func (x *BatchMetricResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_proto_msgTypes[6]
+	mi := &file_server_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -429,7 +386,7 @@ func (x *BatchMetricResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BatchMetricResponse.ProtoReflect.Descriptor instead.
 func (*BatchMetricResponse) Descriptor() ([]byte, []int) {
-	return file_server_proto_rawDescGZIP(), []int{6}
+	return file_server_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *BatchMetricResponse) GetStatus() Status {
@@ -439,16 +396,24 @@ func (x *BatchMetricResponse) GetStatus() Status {
 	return Status_OK
 }
 
+func (x *BatchMetricResponse) GetMetrics() []*Metric {
+	if x != nil {
+		return x.Metrics
+	}
+	return nil
+}
+
 type GetJSONMetricResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Metric        *Metric                `protobuf:"bytes,1,opt,name=metric,proto3" json:"metric,omitempty"`
+	Status        Status                 `protobuf:"varint,1,opt,name=status,proto3,enum=proto.Status" json:"status,omitempty"`
+	Metric        *Metric                `protobuf:"bytes,2,opt,name=metric,proto3" json:"metric,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetJSONMetricResponse) Reset() {
 	*x = GetJSONMetricResponse{}
-	mi := &file_server_proto_msgTypes[7]
+	mi := &file_server_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -460,7 +425,7 @@ func (x *GetJSONMetricResponse) String() string {
 func (*GetJSONMetricResponse) ProtoMessage() {}
 
 func (x *GetJSONMetricResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_server_proto_msgTypes[7]
+	mi := &file_server_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -473,7 +438,14 @@ func (x *GetJSONMetricResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetJSONMetricResponse.ProtoReflect.Descriptor instead.
 func (*GetJSONMetricResponse) Descriptor() ([]byte, []int) {
-	return file_server_proto_rawDescGZIP(), []int{7}
+	return file_server_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetJSONMetricResponse) GetStatus() Status {
+	if x != nil {
+		return x.Status
+	}
+	return Status_OK
 }
 
 func (x *GetJSONMetricResponse) GetMetric() *Metric {
@@ -487,11 +459,11 @@ var File_server_proto protoreflect.FileDescriptor
 
 const file_server_proto_rawDesc = "" +
 	"\n" +
-	"\fserver.proto\x12\x06server\"\xf2\x01\n" +
+	"\fserver.proto\x12\x05proto\"\xf0\x01\n" +
 	"\n" +
-	"MemStorage\x123\n" +
-	"\x05gauge\x18\x01 \x03(\v2\x1d.server.MemStorage.GaugeEntryR\x05gauge\x129\n" +
-	"\acounter\x18\x02 \x03(\v2\x1f.server.MemStorage.CounterEntryR\acounter\x1a8\n" +
+	"MemStorage\x122\n" +
+	"\x05gauge\x18\x01 \x03(\v2\x1c.proto.MemStorage.GaugeEntryR\x05gauge\x128\n" +
+	"\acounter\x18\x02 \x03(\v2\x1e.proto.MemStorage.CounterEntryR\acounter\x1a8\n" +
 	"\n" +
 	"GaugeEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
@@ -508,25 +480,24 @@ const file_server_proto_rawDesc = "" +
 	"\x05delta\x18\x01 \x01(\x03R\x05delta\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x0e\n" +
 	"\x02id\x18\x03 \x01(\tR\x02id\x12\x15\n" +
-	"\x06m_type\x18\x04 \x01(\tR\x05mType\"p\n" +
-	"\rHandlersInput\x12,\n" +
-	"\astorage\x18\x01 \x01(\v2\x12.server.MemStorageR\astorage\x121\n" +
-	"\vsync_config\x18\x02 \x01(\v2\x10.server.SyncInfoR\n" +
-	"syncConfig\">\n" +
-	"\x12BatchMetricRequest\x12(\n" +
-	"\ametrics\x18\x01 \x03(\v2\x0e.server.MetricR\ametrics\"'\n" +
+	"\x06m_type\x18\x04 \x01(\tR\x05mType\"=\n" +
+	"\x12BatchMetricRequest\x12'\n" +
+	"\ametrics\x18\x01 \x03(\v2\r.proto.MetricR\ametrics\">\n" +
 	"\x15GetJSONMetricsRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"=\n" +
-	"\x13BatchMetricResponse\x12&\n" +
-	"\x06status\x18\x01 \x01(\x0e2\x0e.server.StatusR\x06status\"?\n" +
-	"\x15GetJSONMetricResponse\x12&\n" +
-	"\x06metric\x18\x01 \x01(\v2\x0e.server.MetricR\x06metric*\x1b\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x15\n" +
+	"\x06m_type\x18\x02 \x01(\tR\x05mType\"e\n" +
+	"\x13BatchMetricResponse\x12%\n" +
+	"\x06status\x18\x01 \x01(\x0e2\r.proto.StatusR\x06status\x12'\n" +
+	"\ametrics\x18\x02 \x03(\v2\r.proto.MetricR\ametrics\"e\n" +
+	"\x15GetJSONMetricResponse\x12%\n" +
+	"\x06status\x18\x01 \x01(\x0e2\r.proto.StatusR\x06status\x12%\n" +
+	"\x06metric\x18\x02 \x01(\v2\r.proto.MetricR\x06metric*\x1b\n" +
 	"\x06Status\x12\x06\n" +
 	"\x02OK\x10\x00\x12\t\n" +
-	"\x05ERROR\x10\x012\xb0\x01\n" +
-	"\x12BatchMetricHandler\x12K\n" +
-	"\x10SaveBatchMetrics\x12\x1a.server.BatchMetricRequest\x1a\x1b.server.BatchMetricResponse\x12M\n" +
-	"\rGetJSONMetric\x12\x1d.server.GetJSONMetricsRequest\x1a\x1d.server.GetJSONMetricResponseB\x11Z\x0finternal/serverb\x06proto3"
+	"\x05ERROR\x10\x012\xac\x01\n" +
+	"\x12BatchMetricHandler\x12I\n" +
+	"\x10SaveBatchMetrics\x12\x19.proto.BatchMetricRequest\x1a\x1a.proto.BatchMetricResponse\x12K\n" +
+	"\rGetJSONMetric\x12\x1c.proto.GetJSONMetricsRequest\x1a\x1c.proto.GetJSONMetricResponseB\x10Z\x0einternal/protob\x06proto3"
 
 var (
 	file_server_proto_rawDescOnce sync.Once
@@ -541,37 +512,36 @@ func file_server_proto_rawDescGZIP() []byte {
 }
 
 var file_server_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_server_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_server_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_server_proto_goTypes = []any{
-	(Status)(0),                   // 0: server.Status
-	(*MemStorage)(nil),            // 1: server.MemStorage
-	(*SyncInfo)(nil),              // 2: server.SyncInfo
-	(*Metric)(nil),                // 3: server.Metric
-	(*HandlersInput)(nil),         // 4: server.HandlersInput
-	(*BatchMetricRequest)(nil),    // 5: server.BatchMetricRequest
-	(*GetJSONMetricsRequest)(nil), // 6: server.GetJSONMetricsRequest
-	(*BatchMetricResponse)(nil),   // 7: server.BatchMetricResponse
-	(*GetJSONMetricResponse)(nil), // 8: server.GetJSONMetricResponse
-	nil,                           // 9: server.MemStorage.GaugeEntry
-	nil,                           // 10: server.MemStorage.CounterEntry
+	(Status)(0),                   // 0: proto.Status
+	(*MemStorage)(nil),            // 1: proto.MemStorage
+	(*SyncInfo)(nil),              // 2: proto.SyncInfo
+	(*Metric)(nil),                // 3: proto.Metric
+	(*BatchMetricRequest)(nil),    // 4: proto.BatchMetricRequest
+	(*GetJSONMetricsRequest)(nil), // 5: proto.GetJSONMetricsRequest
+	(*BatchMetricResponse)(nil),   // 6: proto.BatchMetricResponse
+	(*GetJSONMetricResponse)(nil), // 7: proto.GetJSONMetricResponse
+	nil,                           // 8: proto.MemStorage.GaugeEntry
+	nil,                           // 9: proto.MemStorage.CounterEntry
 }
 var file_server_proto_depIdxs = []int32{
-	9,  // 0: server.MemStorage.gauge:type_name -> server.MemStorage.GaugeEntry
-	10, // 1: server.MemStorage.counter:type_name -> server.MemStorage.CounterEntry
-	1,  // 2: server.HandlersInput.storage:type_name -> server.MemStorage
-	2,  // 3: server.HandlersInput.sync_config:type_name -> server.SyncInfo
-	3,  // 4: server.BatchMetricRequest.metrics:type_name -> server.Metric
-	0,  // 5: server.BatchMetricResponse.status:type_name -> server.Status
-	3,  // 6: server.GetJSONMetricResponse.metric:type_name -> server.Metric
-	5,  // 7: server.BatchMetricHandler.SaveBatchMetrics:input_type -> server.BatchMetricRequest
-	6,  // 8: server.BatchMetricHandler.GetJSONMetric:input_type -> server.GetJSONMetricsRequest
-	7,  // 9: server.BatchMetricHandler.SaveBatchMetrics:output_type -> server.BatchMetricResponse
-	8,  // 10: server.BatchMetricHandler.GetJSONMetric:output_type -> server.GetJSONMetricResponse
-	9,  // [9:11] is the sub-list for method output_type
-	7,  // [7:9] is the sub-list for method input_type
-	7,  // [7:7] is the sub-list for extension type_name
-	7,  // [7:7] is the sub-list for extension extendee
-	0,  // [0:7] is the sub-list for field type_name
+	8, // 0: proto.MemStorage.gauge:type_name -> proto.MemStorage.GaugeEntry
+	9, // 1: proto.MemStorage.counter:type_name -> proto.MemStorage.CounterEntry
+	3, // 2: proto.BatchMetricRequest.metrics:type_name -> proto.Metric
+	0, // 3: proto.BatchMetricResponse.status:type_name -> proto.Status
+	3, // 4: proto.BatchMetricResponse.metrics:type_name -> proto.Metric
+	0, // 5: proto.GetJSONMetricResponse.status:type_name -> proto.Status
+	3, // 6: proto.GetJSONMetricResponse.metric:type_name -> proto.Metric
+	4, // 7: proto.BatchMetricHandler.SaveBatchMetrics:input_type -> proto.BatchMetricRequest
+	5, // 8: proto.BatchMetricHandler.GetJSONMetric:input_type -> proto.GetJSONMetricsRequest
+	6, // 9: proto.BatchMetricHandler.SaveBatchMetrics:output_type -> proto.BatchMetricResponse
+	7, // 10: proto.BatchMetricHandler.GetJSONMetric:output_type -> proto.GetJSONMetricResponse
+	9, // [9:11] is the sub-list for method output_type
+	7, // [7:9] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_server_proto_init() }
@@ -585,7 +555,7 @@ func file_server_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_server_proto_rawDesc), len(file_server_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   10,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

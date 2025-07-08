@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package server;
+package proto;
 
-option go_package = "internal/server";
+option go_package = "internal/proto";
 
 message MemStorage {
   map<string, double> gauge = 1;  // gauge метрики
@@ -24,17 +24,13 @@ message Metric {
   string m_type = 4; // тип метрики
 }
 
-message HandlersInput {
-  MemStorage storage = 1;
-  SyncInfo sync_config = 2;
-}
-
 message BatchMetricRequest {
   repeated Metric metrics = 1;
 }
 
 message GetJSONMetricsRequest {
-  string id = 1;    // название метрики
+  string id = 1;      // название метрики
+  string m_type = 2;  // тип метрики
 }
 
 enum Status {
@@ -44,10 +40,12 @@ enum Status {
 
 message BatchMetricResponse {
   Status status = 1;
+  repeated Metric metrics = 2;
 }
 
 message GetJSONMetricResponse {
-  Metric metric = 1;
+  Status status = 1;
+  Metric metric = 2;
 }
 
 service BatchMetricHandler {

@@ -4,7 +4,7 @@
 // - protoc             v6.31.1
 // source: server.proto
 
-package server
+package proto
 
 import (
 	context "context"
@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	BatchMetricHandler_SaveBatchMetrics_FullMethodName = "/server.BatchMetricHandler/SaveBatchMetrics"
-	BatchMetricHandler_GetJSONMetric_FullMethodName    = "/server.BatchMetricHandler/GetJSONMetric"
+	BatchMetricHandler_SaveBatchMetrics_FullMethodName = "/proto.BatchMetricHandler/SaveBatchMetrics"
+	BatchMetricHandler_GetJSONMetric_FullMethodName    = "/proto.BatchMetricHandler/GetJSONMetric"
 )
 
 // BatchMetricHandlerClient is the client API for BatchMetricHandler service.
@@ -142,7 +142,7 @@ func _BatchMetricHandler_GetJSONMetric_Handler(srv interface{}, ctx context.Cont
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var BatchMetricHandler_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "server.BatchMetricHandler",
+	ServiceName: "proto.BatchMetricHandler",
 	HandlerType: (*BatchMetricHandlerServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{

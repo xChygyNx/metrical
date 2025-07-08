@@ -61,18 +61,6 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 func sendReport(client *pester.Client, memStats *runtime.MemStats, pollCount int, config *Config) error {
 	sendInfo := prepareStatsForSend(memStats)
 
-	// Err = SendGauge(client, sendInfo, config)
-	// if err != nil {
-	//	log.Printf("error in send gauge: %v\n", err)
-	//	continue
-	// }
-	//
-	// err = SendCounter(client, pollCount, config)
-	// if err != nil {
-	//	log.Printf("error in send counter: %v\n", err)
-	//	continue
-	// }.
-
 	err := BatchSendGauge(client, sendInfo, config)
 	if err != nil {
 		returnErr := fmt.Errorf("error in batch send gauge: %w", err)

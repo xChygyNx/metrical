@@ -338,7 +338,7 @@ func getMetricValue(mType, mName string, storage *types.MemStorage) (num interfa
 
 // GetMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
 // метрики значение которой необходимо получить содержится в URL запроса.
-func GetMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+func GetMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, textContentType)
 		metricType := req.PathValue("mType")
@@ -380,7 +380,7 @@ func GetMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.H
 
 // GetJSONMetricHandle GET запросов на получение значения одной сохраненной метрики. Название
 // // метрики значение которой необходимо получить содержится в теле запроса.
-func GetJSONMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+func GetJSONMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Set(contentType, jsonContentType)
 		bodyByte, err := io.ReadAll(req.Body)
@@ -442,7 +442,7 @@ func GetJSONMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) ht
 
 // ListMetricHandle GET запросов на получение значения одной сохраненной метрики. Возвращает
 // все сохраненные метрики в JSON виде с группировкой тип метрики/название метрики.
-func ListMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) http.HandlerFunc {
+func ListMetricHandle(storage *types.MemStorage) http.HandlerFunc {
 	return func(res http.ResponseWriter, req *http.Request) {
 		res.Header().Add(contentType, "text/html")
 
