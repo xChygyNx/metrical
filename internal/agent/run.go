@@ -3,8 +3,11 @@
 package agent
 
 import (
+	"context"
 	"fmt"
+	//"google.golang.org/grpc"
 	"math/rand"
+	//"net"
 	"os"
 	"runtime"
 	"time"
@@ -77,15 +80,11 @@ func sendReport(client *pester.Client, memStats *runtime.MemStats, pollCount int
 }
 
 // Run запускает агент по сбору метрик системы, который в соответсвии с заданной
-// в конфигурации интервалами времени собирает и отсылает метрики системы на сервер.
-func Run(sigs chan os.Signal) error {
+// в конфигурации интервалами времени собирает и отсылает метрики системы на Http сервер.
+func RunHTTP(ctx context.Context, sigs chan os.Signal, config *Config) error {
 	var pollCount int
 	var memStats runtime.MemStats
 
-	config, err := GetConfig()
-	if err != nil {
-		return err
-	}
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
 
@@ -115,4 +114,14 @@ func Run(sigs chan os.Signal) error {
 		}
 	}
 	return fmt.Errorf("agent get signal %v", signal)
+}
+
+func RunGRPC(ctx context.Context, sigs chan os.Signal, config *Config) error {
+	//listen, err := net.Listen("tcp", config.GRPCPort)
+	//if err != nil {
+	//	return fmt.Errorf("error in listen gRPC port %s: %w", config.GRPCPort, err)
+	//}
+	//server := grpc.NewServer()
+	//fmt.Println("gPPC is OK")
+	return nil
 }

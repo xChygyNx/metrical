@@ -40,6 +40,7 @@ type Config struct {
 	RSAPrivateKey   string   `json:"crypto_key"`   // Путь до файла с приватным ключом.
 	ConfigFile      string   // JSON файл с конфигурацией сервера
 	TrustedSubnet   string   `json:"trusted_subnet"` // Доверенная подсеть
+	GRPCPort        string   `json:"grpc_port"`      // gRPC порт
 	HostPort        HostPort `json:"address"`        // Адрес сервера.
 	StoreInterval   int      `json:"storeInterval"`  // Интервал сохранения метрик
 	Restore         bool     `json:"restore"`        // Флаг загрузки метрик из хранилища при старте сервера
@@ -52,6 +53,7 @@ type TmpConfig struct {
 	RSAPrivateKey   string `json:"crypto_key"`     // Путь до файла с приватным ключом.
 	HostPort        string `json:"address"`        // Адрес сервера.
 	TrustedSubnet   string `json:"trusted_subnet"` // Доверенная подсеть
+	GRPCPort        string `json:"grpc_port"`      // gRPC порт
 	StoreInterval   int    `json:"storeInterval"`  // Интервал сохранения метрик
 	Restore         bool   `json:"restore"`        // Флаг загрузки метрик из хранилища при старте сервера
 }
@@ -69,9 +71,11 @@ func (conf *Config) String() string {
 			"Restore: %t\n"+
 			"Host: %s:%d\n"+
 			"DBAddress: %s\n"+
-			"RSAPrivateKey: %s\n",
+			"RSAPrivateKey: %s\n"+
+			"TrustedSubnet: %s\n"+
+			"gRPC port: %s\n",
 		conf.StoreInterval, conf.FileStoragePath, conf.Restore, conf.HostPort.Host, conf.HostPort.Port, conf.DBAddress,
-		conf.RSAPrivateKey)
+		conf.RSAPrivateKey, conf.TrustedSubnet, conf.GRPCPort)
 }
 
 // Set считывет данные из строки формата "host:port" в структуру HostPort.
@@ -103,10 +107,14 @@ func parseFlag() *Config {
 	flag.StringVar(&config.ConfigFile, "config", "", "Path to JSON config file")
 	flag.StringVar(&config.ConfigFile, "c", "", "Path to JSON config file")
 	flag.StringVar(&config.TrustedSubnet, "t", "", "Trusted subnet")
+	flag.StringVar(&config.GRPCPort, "g", "", "gRPC port")
 	flag.Parse()
 	if config.HostPort.Host == "" && config.HostPort.Port == 0 {
 		config.HostPort.Host = "localhost"
 		config.HostPort.Port = 8080
+	}
+	if config.GRPCPort == "" {
+		config.GRPCPort = ":" + strconv.Itoa(config.HostPort.Port+1)
 	}
 	return config
 }
@@ -154,6 +162,9 @@ func parseConfigFromJSON(configFile string, config *Config) (*Config, error) {
 	}
 	if _, ok := args["t"]; !ok {
 		config.TrustedSubnet = tmpConfig.TrustedSubnet
+	}
+	if _, ok := args["g"]; !ok {
+		config.GRPCPort = tmpConfig.GRPCPort
 	}
 	if _, ok := args["crypto-key"]; !ok {
 		config.RSAPrivateKey = tmpConfig.RSAPrivateKey
@@ -230,6 +241,11 @@ func GetConfig() (config *Config, err error) {
 	trustSubnet, ok := os.LookupEnv("TRUSTED_SUBNET")
 	if ok {
 		config.TrustedSubnet = trustSubnet
+	}
+
+	gRPCPort, ok := os.LookupEnv("GRPC_PORT")
+	if ok {
+		config.GRPCPort = gRPCPort
 	}
 
 	privateKey, ok := os.LookupEnv("CRYPTO_KEY")

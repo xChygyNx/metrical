@@ -29,18 +29,22 @@ func main() {
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	config, err := server.GetConfig()
+	if err != nil {
+		log.Fatal(fmt.Errorf("error in GetConfig: %w", err).Error())
+	}
 
 	errGroup, ctx := errgroup.WithContext(context.Background())
 
 	errGroup.Go(func() error {
-		err := server.RunHTTPServer(ctx, sigs)
+		err := server.RunHTTPServer(ctx, sigs, config)
 		if err != nil {
 			return fmt.Errorf("error in work HTTP server: %w", err)
 		}
 		return err
 	})
 	errGroup.Go(func() error {
-		err := server.RunGRPCServer(ctx, sigs)
+		err := server.RunGRPCServer(ctx, sigs, config)
 		if err != nil {
 			return fmt.Errorf("error in work gRPC server: %w", err)
 		}

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -88,10 +87,10 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	return router
 }
 
-func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.SyncInfo, err error) {
+func getSyncInfo(config *Config, storage *types.MemStorage) (syncInfo *types.SyncInfo, err error) {
 	config, err = GetConfig()
 	if err != nil {
-		return nil, nil, fmt.Errorf("error in GetConfig: %w", err)
+		return nil, fmt.Errorf("error in GetConfig: %w", err)
 	}
 
 	if config.Restore {
@@ -100,13 +99,13 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 		if errors.As(err, &storageFileNotFound) {
 
 		} else if err != nil {
-			return nil, nil, fmt.Errorf("error with restore MemStorage from file: %w", err)
+			return nil, fmt.Errorf("error with restore MemStorage from file: %w", err)
 		}
 	}
 
 	syncInfo, err = GetSyncInfo(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error in GetSyncInfo: %w", err)
+		return nil, fmt.Errorf("error in GetSyncInfo: %w", err)
 	}
 
 	return
@@ -114,7 +113,7 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 
 // RunHTTPServer запускает сервер по приему http запросов на сохранение метрик в хранилища
 // указанные в конфигурации.
-func RunHTTPServer(ctx context.Context, sigs chan os.Signal) (err error) {
+func RunHTTPServer(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -129,9 +128,9 @@ func RunHTTPServer(ctx context.Context, sigs chan os.Signal) (err error) {
 	sugar := *logger.Sugar()
 	storage := types.GetMemStorage()
 
-	config, syncInfo, err := configAndSync(storage)
+	syncInfo, err := getSyncInfo(config, storage)
 	if err != nil {
-		return fmt.Errorf("error in configAndSync: %w", err)
+		return fmt.Errorf("error in getSyncInfo: %w", err)
 	}
 
 	if syncInfo.DB != nil {
@@ -170,27 +169,23 @@ func RunHTTPServer(ctx context.Context, sigs chan os.Signal) (err error) {
 }
 
 // RunGRPCServer запускает сервер по приему gRPC запросов на сохранение метрик в оперативную память
-func RunGRPCServer(ctx context.Context, sigs chan os.Signal) (err error) {
-	port, ok := os.LookupEnv(gRPCPortVar)
-	if !ok {
-		port = gRPCPort
-	}
-	listen, err := net.Listen("tcp", port)
+func RunGRPCServer(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
+	listen, err := net.Listen("tcp", config.GRPCPort)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("error in listen gRPC port %s: %w", config.GRPCPort, err)
 	}
-
-	go func() {
-		<-sigs
-
-		if err := listen.Close(); err != nil {
-			fmt.Println(fmt.Errorf("error in shutdown gRPC server: %w", err).Error())
-		}
-	}()
 
 	s := grpc.NewServer()
 	pb.RegisterBatchMetricHandlerServer(s, &MetricServer{})
 	fmt.Println("Сервер gRPC начал работу")
+
+	go func() {
+		<-sigs
+		s.Stop()
+		if err := listen.Close(); err != nil {
+			fmt.Println(fmt.Errorf("error in shutdown gRPC server: %w", err).Error())
+		}
+	}()
 
 	if err := s.Serve(listen); err != nil {
 		return fmt.Errorf("error in serve gRPC request: %w", err)
