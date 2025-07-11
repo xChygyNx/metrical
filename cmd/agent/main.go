@@ -36,9 +36,9 @@ func main() {
 	errGroup.Go(func() error {
 		return agent.RunGRPC(ctx, sigs, config)
 	})
-	//errGroup.Go(func() error {
-	//	return agent.RunHTTP(ctx, sigs, config)
-	//})
+	errGroup.Go(func() error {
+		return agent.RunHTTP(ctx, sigs, config)
+	})
 	if err := errGroup.Wait(); err != nil {
 		log.Fatal(err)
 	}
