@@ -44,6 +44,9 @@ func parseConfigFromJSON(configFile string, config *Config) (*Config, error) {
 	if _, ok := args["r"]; !ok {
 		config.ReportInterval = tmpConfig.ReportInterval
 	}
+	if _, ok := args["g"]; !ok {
+		config.GRPCPort = tmpConfig.GRPCPort
+	}
 	if _, ok := args["crypto-key"]; !ok {
 		config.RSAPublicKey = tmpConfig.RSAPublicKey
 	}
@@ -85,7 +88,7 @@ func GetConfig() (config *Config, err error) {
 		config.PollInterval = res
 	}
 
-	reportInterval, ok := os.LookupEnv("POLL_INTERVAL")
+	reportInterval, ok := os.LookupEnv("REPORT_INTERVAL")
 	if ok {
 		res, err := strconv.Atoi(reportInterval)
 		if err != nil {
@@ -93,6 +96,11 @@ func GetConfig() (config *Config, err error) {
 			return nil, errors.New(errorMsg)
 		}
 		config.ReportInterval = res
+	}
+
+	gRPCPort, ok := os.LookupEnv("GRPC_PORT")
+	if ok {
+		config.GRPCPort = gRPCPort
 	}
 
 	hostAddr, ok := os.LookupEnv("ADDRESS")

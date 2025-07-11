@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"net"
 	"net/http"
 	"os"
 	"time"
@@ -14,7 +15,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
+	"google.golang.org/grpc"
 
+	pb "github.com/xChygyNx/metrical/internal/proto"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
@@ -58,6 +61,7 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	config *Config, sugar zap.SugaredLogger) chi.Router {
 	router := chi.NewRouter()
 	router.Use(GzipHandler)
+	router.Use(CheckIPHandler(config))
 	router.Mount("/debug", middleware.Profiler())
 
 	router.Post("/update",
@@ -81,11 +85,7 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 	return router
 }
 
-func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.SyncInfo, err error) {
-	config, err = GetConfig()
-	if err != nil {
-		return nil, nil, fmt.Errorf("error in GetConfig: %w", err)
-	}
+func getSyncInfo(config *Config, storage *types.MemStorage) (syncInfo *types.SyncInfo, err error) {
 
 	if config.Restore {
 		err = restoreMetricStore(config.FileStoragePath, storage)
@@ -93,21 +93,21 @@ func configAndSync(storage *types.MemStorage) (config *Config, syncInfo *types.S
 		if errors.As(err, &storageFileNotFound) {
 
 		} else if err != nil {
-			return nil, nil, fmt.Errorf("error with restore MemStorage from file: %w", err)
+			return nil, fmt.Errorf("error with restore MemStorage from file: %w", err)
 		}
 	}
 
 	syncInfo, err = GetSyncInfo(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error in GetSyncInfo: %w", err)
+		return nil, fmt.Errorf("error in GetSyncInfo: %w", err)
 	}
 
 	return
 }
 
-// Routing запускает сервер по приему http запросов на сохранение метрик в хранилища
+// RunHTTPServer запускает сервер по приему http запросов на сохранение метрик в хранилища
 // указанные в конфигурации.
-func Routing(sigs chan os.Signal) (err error) {
+func RunHTTPServer(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
 	// Initialize logger
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -122,9 +122,9 @@ func Routing(sigs chan os.Signal) (err error) {
 	sugar := *logger.Sugar()
 	storage := types.GetMemStorage()
 
-	config, syncInfo, err := configAndSync(storage)
+	syncInfo, err := getSyncInfo(config, storage)
 	if err != nil {
-		return fmt.Errorf("error in configAndSync: %w", err)
+		return fmt.Errorf("error in getSyncInfo: %w", err)
 	}
 
 	if syncInfo.DB != nil {
@@ -147,16 +147,51 @@ func Routing(sigs chan os.Signal) (err error) {
 	}
 
 	go func() {
-		<-sigs
-
+		select {
+		case <-sigs:
+			break
+		case <-ctx.Done():
+			break
+		}
 		if err := server.Shutdown(context.Background()); err != nil {
-			fmt.Println(fmt.Errorf("error in shutdown server: %w", err).Error())
+			fmt.Println(fmt.Errorf("error in shutdown HTTP server: %w", err).Error())
 		}
 	}()
 
 	err = server.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("error with launch http server: %w", err)
+	}
+
+	return
+}
+
+// RunGRPCServer запускает сервер по приему gRPC запросов на сохранение метрик в оперативную память
+func RunGRPCServer(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
+	listen, err := net.Listen("tcp", config.GRPCPort)
+	if err != nil {
+		return fmt.Errorf("error in listen gRPC port %s: %w", config.GRPCPort, err)
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterBatchMetricHandlerServer(s, &MetricServer{})
+	fmt.Println("Сервер gRPC начал работу")
+
+	go func() {
+		select {
+		case <-sigs:
+			break
+		case <-ctx.Done():
+			break
+		}
+		s.Stop()
+		if err := listen.Close(); err != nil {
+			fmt.Println(fmt.Errorf("error in shutdown gRPC server: %w", err).Error())
+		}
+	}()
+
+	if err := s.Serve(listen); err != nil {
+		return fmt.Errorf("error in serve gRPC request: %w", err)
 	}
 
 	return

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"log"
 	_ "net/http/pprof" // требуется для запуска профилировщика
 	"os"
@@ -27,9 +29,28 @@ func main() {
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	err := server.Routing(sigs)
-
+	config, err := server.GetConfig()
 	if err != nil {
+		log.Fatal(fmt.Errorf("error in GetConfig: %w", err).Error())
+	}
+
+	errGroup, ctx := errgroup.WithContext(context.Background())
+
+	errGroup.Go(func() error {
+		err := server.RunHTTPServer(ctx, sigs, config)
+		if err != nil {
+			return fmt.Errorf("error in work HTTP server: %w", err)
+		}
+		return err
+	})
+	errGroup.Go(func() error {
+		err := server.RunGRPCServer(ctx, sigs, config)
+		if err != nil {
+			return fmt.Errorf("error in work gRPC server: %w", err)
+		}
+		return err
+	})
+	if err := errGroup.Wait(); err != nil {
 		log.Fatal(err)
 	}
 }

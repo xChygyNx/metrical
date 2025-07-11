@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"golang.org/x/sync/errgroup"
 	"log"
 	"os"
 	"os/signal"
@@ -24,10 +26,20 @@ func main() {
 	fmt.Printf("Build date: %s\n", buildDate)
 	fmt.Printf("Build commit: %s\n", buildCommit)
 
+	config, err := agent.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
-	err := agent.Run(sigs)
-	if err != nil {
+	errGroup, ctx := errgroup.WithContext(context.Background())
+	errGroup.Go(func() error {
+		return agent.RunGRPC(ctx, sigs, config)
+	})
+	errGroup.Go(func() error {
+		return agent.RunHTTP(ctx, sigs, config)
+	})
+	if err := errGroup.Wait(); err != nil {
 		log.Fatal(err)
 	}
 }

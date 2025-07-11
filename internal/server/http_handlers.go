@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -27,6 +28,7 @@ const (
 	internalServerErrorMsg = "Internal server error"
 	errorMsgWildcard       = "%s %w"
 	jsonContentType        = "application/json"
+	realIPHeader           = "X-Real-IP"
 	retryDBWriteCount      = 4
 	retryFileWriteCount    = 4
 	textContentType        = "text/plain"
@@ -254,7 +256,6 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
 
 		err = json.Unmarshal(bodyByte, &metricsData)
-		log.Printf("Unmarshalling metricsData: %v\n", metricsData)
 
 		for _, metricData := range metricsData {
 			metricName := metricData.ID
@@ -505,4 +506,28 @@ func GzipHandler(internal http.Handler) http.Handler {
 		}
 		internal.ServeHTTP(resWriter, req)
 	})
+}
+
+func CheckIPHandler(config *Config) func(handler http.Handler) http.Handler {
+	return func(internal http.Handler) http.Handler {
+		return http.HandlerFunc(func(res http.ResponseWriter, req *http.Request) {
+			if config.TrustedSubnet != "" {
+				_, IPNet, err := net.ParseCIDR(config.TrustedSubnet)
+				if err != nil {
+					errorMsg := fmt.Errorf("error in parse CIDR %s: %w", config.TrustedSubnet, err).Error()
+					log.Println(errorMsg)
+					http.Error(res, internalServerErrorMsg, http.StatusInternalServerError)
+					return
+				}
+				ipAddrStr := req.Header.Get(realIPHeader)
+				ipAddr := net.ParseIP(ipAddrStr)
+				accepted := IPNet.Contains(ipAddr)
+				if !accepted {
+					http.Error(res, "Forbidden", http.StatusForbidden)
+					return
+				}
+			}
+			internal.ServeHTTP(res, req)
+		})
+	}
 }
