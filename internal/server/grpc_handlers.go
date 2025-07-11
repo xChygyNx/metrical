@@ -75,7 +75,16 @@ func (ms *MetricServer) GetJSONMetric(
 		ID:    in.GetId(),
 		MType: in.GetMType(),
 	}
-	response, err := responseGetter.GetJSONResponse(ms.metrics)
+	value, ok := ms.metrics.Load(in.GetId())
+	if !ok {
+		return nil, fmt.Errorf("not found metric %s", in.GetId())
+	}
+	valueStr, ok := value.(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid value of %s: %v", in.GetId(), value)
+	}
+
+	response, err := responseGetter.SaveMetricInSyncMap(valueStr)
 	if err != nil {
 		result.Status = proto.Status_ERROR
 		return nil, fmt.Errorf("error in getting value of metric %s: %w", in.GetId(), err)

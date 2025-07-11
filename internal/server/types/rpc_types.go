@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 	"strconv"
-	"sync"
 
 	pb "github.com/xChygyNx/metrical/internal/proto"
 )
@@ -18,29 +17,20 @@ type MetricGetter struct {
 	MType string
 }
 
-func (mg *MetricGetter) GetJSONResponse(storage sync.Map) (*pb.Metric, error) {
+func (mg *MetricGetter) SaveMetricInSyncMap(value string) (*pb.Metric, error) {
 	var response *pb.Metric
-
-	value, ok := storage.Load(mg.ID)
-	if !ok {
-		return nil, fmt.Errorf("not found metric %s", mg.ID)
-	}
-	valueStr, ok := value.(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid value of %s: %v", mg.ID, value)
-	}
 
 	switch mg.MType {
 	case GAUGE:
-		finalValue, err := strconv.ParseFloat(valueStr, 64)
+		finalValue, err := strconv.ParseFloat(value, 64)
 		if err != nil {
-			return nil, fmt.Errorf("invalid value of %s metric: %s", mg.MType, valueStr)
+			return nil, fmt.Errorf("invalid value of %s metric: %s", mg.MType, value)
 		}
 		response.Value = finalValue
 	case COUNTER:
-		finalDelta, err := strconv.ParseInt(valueStr, 10, 64)
+		finalDelta, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
-			return nil, fmt.Errorf("invalid value of %s metric: %s", mg.MType, valueStr)
+			return nil, fmt.Errorf("invalid value of %s metric: %s", mg.MType, value)
 		}
 		response.Delta = finalDelta
 	default:
