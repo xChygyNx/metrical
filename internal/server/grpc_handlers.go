@@ -25,7 +25,7 @@ func (ms *MetricServer) saveCounter(id string, value int64) (newValue int64, err
 	var saveValue string
 	prevValue, ok := ms.metrics.LoadAndDelete(id)
 	if !ok {
-		saveValue = strconv.FormatInt(value, 64)
+		saveValue = strconv.FormatInt(value, 10)
 	} else {
 		prevValueStr, ok := prevValue.(string)
 		if !ok {
@@ -36,7 +36,7 @@ func (ms *MetricServer) saveCounter(id string, value int64) (newValue int64, err
 			return 0, fmt.Errorf("invalid value in metric store: %v", prevValueStr)
 		}
 		newValue = prevValueInt + value
-		saveValue = strconv.FormatInt(newValue, 64)
+		saveValue = strconv.FormatInt(newValue, 10)
 	}
 	ms.metrics.Store(id, saveValue)
 	return newValue, nil

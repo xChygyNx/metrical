@@ -139,7 +139,7 @@ func RunHTTP(ctx context.Context, sigs chan os.Signal, config *Config) error {
 }
 
 func RunGRPC(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
-	conn, err := grpc.Dial(config.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(config.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return fmt.Errorf("error in create gRPC client: %w", err)
 	}
