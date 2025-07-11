@@ -18,7 +18,7 @@ type MetricGetter struct {
 }
 
 func (mg *MetricGetter) SaveMetricInSyncMap(value string) (*pb.Metric, error) {
-	var response *pb.Metric
+	var response pb.Metric
 
 	switch mg.MType {
 	case GAUGE:
@@ -38,5 +38,5 @@ func (mg *MetricGetter) SaveMetricInSyncMap(value string) (*pb.Metric, error) {
 	}
 	response.Id = mg.ID
 	response.MType = mg.MType
-	return response, nil
+	return &response, nil
 }
