@@ -256,7 +256,6 @@ func SaveBatchMetricHandle(storage *types.MemStorage, syncInfo *types.SyncInfo) 
 		metricsData := make([]types.Metrics, 0, countGaugeMetrics)
 
 		err = json.Unmarshal(bodyByte, &metricsData)
-		log.Printf("Unmarshalling metricsData: %v\n", metricsData)
 
 		for _, metricData := range metricsData {
 			metricName := metricData.ID

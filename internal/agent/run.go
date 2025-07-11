@@ -4,20 +4,33 @@ package agent
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	//"google.golang.org/grpc"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"math/rand"
-	//"net"
 	"os"
 	"runtime"
 	"time"
 
 	"github.com/sethgrid/pester"
+
+	pb "github.com/xChygyNx/metrical/internal/proto"
 )
 
 const (
+	GAUGE        = "gauge"   // тип метрики gauge.
+	COUNTER      = "counter" // тип метрики counter.
 	countRetries = 3
 )
+
+type agentError struct {
+	err error
+}
+
+func (ae *agentError) String() string {
+	return ae.err.Error()
+}
 
 func getRetryClient() *pester.Client {
 	client := pester.New()
@@ -61,7 +74,7 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	return result
 }
 
-func sendReport(client *pester.Client, memStats *runtime.MemStats, pollCount int, config *Config) error {
+func sendReportByHTTP(client *pester.Client, memStats *runtime.MemStats, pollCount int, config *Config) error {
 	sendInfo := prepareStatsForSend(memStats)
 
 	err := BatchSendGauge(client, sendInfo, config)
@@ -79,11 +92,12 @@ func sendReport(client *pester.Client, memStats *runtime.MemStats, pollCount int
 	return nil
 }
 
-// Run запускает агент по сбору метрик системы, который в соответсвии с заданной
+// RunHTTP запускает агент по сбору метрик системы, который в соответсвии с заданной
 // в конфигурации интервалами времени собирает и отсылает метрики системы на Http сервер.
 func RunHTTP(ctx context.Context, sigs chan os.Signal, config *Config) error {
 	var pollCount int
 	var memStats runtime.MemStats
+	var finalErr error
 
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
@@ -97,7 +111,7 @@ func RunHTTP(ctx context.Context, sigs chan os.Signal, config *Config) error {
 			runtime.ReadMemStats(&memStats)
 			pollCount++
 		case <-reportTicker.C:
-			err := sendReport(client, &memStats, pollCount, config)
+			err := sendReportByHTTP(client, &memStats, pollCount, config)
 			if err != nil {
 				fmt.Printf("error in report stats: %s\n", err.Error())
 				continue
@@ -106,22 +120,86 @@ func RunHTTP(ctx context.Context, sigs chan os.Signal, config *Config) error {
 
 		case signal = <-sigs:
 			interrupt = true
-			err := sendReport(client, &memStats, pollCount, config)
+			err := sendReportByHTTP(client, &memStats, pollCount, config)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+			}
+			finalErr = fmt.Errorf("agent get signal %v", signal)
+
+		case <-ctx.Done():
+			interrupt = true
+			err := sendReportByHTTP(client, &memStats, pollCount, config)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+			}
+			finalErr = errors.New("cancel context")
+		}
+	}
+	return finalErr
+}
+
+func RunGRPC(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
+	conn, err := grpc.Dial(config.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("error in create gRPC client: %w", err)
+	}
+	defer func() {
+		err = conn.Close()
+	}()
+
+	go func() {
+		<-sigs
+
+		if err := conn.Close(); err != nil {
+			fmt.Println(fmt.Errorf("error in close gRPC connection: %w", err).Error())
+		}
+	}()
+	handlerClient := pb.NewBatchMetricHandlerClient(conn)
+
+	err = sendMetricsByGRPC(ctx, sigs, handlerClient, config)
+
+	return nil
+}
+
+func sendMetricsByGRPC(ctx context.Context, sigs chan os.Signal,
+	client pb.BatchMetricHandlerClient, config *Config) error {
+	var pollCount int
+	var memStats runtime.MemStats
+	var finalErr error
+
+	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
+
+	var interrupt bool
+	var signal os.Signal
+	for !interrupt {
+		select {
+		case <-pollTicker.C:
+			runtime.ReadMemStats(&memStats)
+			pollCount++
+		case <-reportTicker.C:
+			err := sendReportByGRPC(ctx, client, &memStats, pollCount)
 			if err != nil {
 				fmt.Printf("error in report stats: %s\n", err.Error())
 				continue
 			}
+			pollCount = 0
+
+		case signal = <-sigs:
+			interrupt = true
+			err := sendReportByGRPC(ctx, client, &memStats, pollCount)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+			}
+			finalErr = fmt.Errorf("agent get signal %v", signal)
+		case <-ctx.Done():
+			interrupt = true
+			err := sendReportByGRPC(ctx, client, &memStats, pollCount)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+			}
+			finalErr = errors.New("cancel context")
 		}
 	}
-	return fmt.Errorf("agent get signal %v", signal)
-}
-
-func RunGRPC(ctx context.Context, sigs chan os.Signal, config *Config) error {
-	//listen, err := net.Listen("tcp", config.GRPCPort)
-	//if err != nil {
-	//	return fmt.Errorf("error in listen gRPC port %s: %w", config.GRPCPort, err)
-	//}
-	//server := grpc.NewServer()
-	//fmt.Println("gPPC is OK")
-	return nil
+	return finalErr
 }

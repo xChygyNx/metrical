@@ -18,7 +18,7 @@ type MetricGetter struct {
 	MType string
 }
 
-func (mg *MetricGetter) GetJSONResponse(storage *sync.Map) (*pb.Metric, error) {
+func (mg *MetricGetter) GetJSONResponse(storage sync.Map) (*pb.Metric, error) {
 	var response *pb.Metric
 
 	value, ok := storage.Load(mg.ID)

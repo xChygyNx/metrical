@@ -24,8 +24,6 @@ import (
 const (
 	readTimeoutSeconds  = 10
 	writeTimeoutSeconds = 10
-	gRPCPortVar         = "GRPC_PORT"
-	gRPCPort            = ":3200"
 )
 
 func middlewareLogger(h http.Handler, sugar zap.SugaredLogger) http.HandlerFunc {
@@ -88,10 +86,6 @@ func getChiRouter(storage *types.MemStorage, syncInfo *types.SyncInfo,
 }
 
 func getSyncInfo(config *Config, storage *types.MemStorage) (syncInfo *types.SyncInfo, err error) {
-	config, err = GetConfig()
-	if err != nil {
-		return nil, fmt.Errorf("error in GetConfig: %w", err)
-	}
 
 	if config.Restore {
 		err = restoreMetricStore(config.FileStoragePath, storage)
@@ -153,8 +147,12 @@ func RunHTTPServer(ctx context.Context, sigs chan os.Signal, config *Config) (er
 	}
 
 	go func() {
-		<-sigs
-
+		select {
+		case <-sigs:
+			break
+		case <-ctx.Done():
+			break
+		}
 		if err := server.Shutdown(context.Background()); err != nil {
 			fmt.Println(fmt.Errorf("error in shutdown HTTP server: %w", err).Error())
 		}
@@ -180,7 +178,12 @@ func RunGRPCServer(ctx context.Context, sigs chan os.Signal, config *Config) (er
 	fmt.Println("Сервер gRPC начал работу")
 
 	go func() {
-		<-sigs
+		select {
+		case <-sigs:
+			break
+		case <-ctx.Done():
+			break
+		}
 		s.Stop()
 		if err := listen.Close(); err != nil {
 			fmt.Println(fmt.Errorf("error in shutdown gRPC server: %w", err).Error())

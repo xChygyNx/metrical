@@ -2,6 +2,7 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,9 +11,11 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/sethgrid/pester"
 
+	pb "github.com/xChygyNx/metrical/internal/proto"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
@@ -178,7 +181,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	for attr, value := range sendInfo {
 		metricInfo := types.Metrics{
 			ID:    attr,
-			MType: "gauge",
+			MType: GAUGE,
 			Value: &value,
 		}
 		sendData = append(sendData, metricInfo)
@@ -249,7 +252,7 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *Config) (err
 	sendData := make([]types.Metrics, 0, 1)
 	metricInfo := types.Metrics{
 		ID:    "PollCount",
-		MType: "counter",
+		MType: COUNTER,
 		Delta: &pollCount64,
 	}
 
@@ -297,4 +300,30 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *Config) (err
 	}
 	log.Println(responseBodyMsg, string(body))
 	return
+}
+
+func sendReportByGRPC(ctx context.Context, client pb.BatchMetricHandlerClient, gauges *runtime.MemStats,
+	counterValue int) error {
+	requestData := make([]*pb.Metric, 0, 10)
+	sendInfo := prepareStatsForSend(gauges)
+
+	for k, v := range sendInfo {
+		requestData = append(requestData, &pb.Metric{
+			Id:    k,
+			Value: v,
+			MType: GAUGE,
+		})
+	}
+	requestData = append(requestData, &pb.Metric{
+		Id:    "PollCount",
+		Delta: int64(counterValue),
+		MType: GAUGE,
+	})
+	resp, err := client.SaveBatchMetrics(ctx, &pb.BatchMetricRequest{Metrics: requestData})
+	if err != nil {
+		//log.Printf("Status of gRPC request: %v", resp.Status)
+		return fmt.Errorf("error in save BatchMetrics by gRPC: %w", err)
+	}
+	log.Printf("Response of gRPC server: %v | Status: %v", resp.Metrics, resp.Status)
+	return nil
 }

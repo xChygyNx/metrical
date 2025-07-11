@@ -13,7 +13,7 @@ import (
 type MetricServer struct {
 	proto.BatchMetricHandlerServer
 
-	metrics *sync.Map
+	metrics sync.Map
 }
 
 func (ms *MetricServer) saveGauge(id string, value float64) {
