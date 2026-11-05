@@ -3,19 +3,34 @@
 package agent
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"log"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"math/rand"
 	"os"
 	"runtime"
 	"time"
 
 	"github.com/sethgrid/pester"
+
+	pb "github.com/xChygyNx/metrical/internal/proto"
 )
 
 const (
+	GAUGE        = "gauge"   // тип метрики gauge.
+	COUNTER      = "counter" // тип метрики counter.
 	countRetries = 3
 )
+
+type agentError struct {
+	err error
+}
+
+func (ae *agentError) String() string {
+	return ae.err.Error()
+}
 
 func getRetryClient() *pester.Client {
 	client := pester.New()
@@ -59,86 +74,132 @@ func prepareStatsForSend(stats *runtime.MemStats) map[string]float64 {
 	return result
 }
 
-// Run запускает агент по сбору метрик системы, который в соответсвии с заданной
-// в конфигурации интервалами времени собирает и отсылает метрики системы на сервер.
-func Run(sigs chan os.Signal) error {
+func sendReportByHTTP(client *pester.Client, memStats *runtime.MemStats, pollCount int, config *Config) error {
+	sendInfo := prepareStatsForSend(memStats)
+
+	err := BatchSendGauge(client, sendInfo, config)
+	if err != nil {
+		returnErr := fmt.Errorf("error in batch send gauge: %w", err)
+		return returnErr
+	}
+
+	err = BatchSendCounter(client, pollCount, config)
+	if err != nil {
+		returnErr := fmt.Errorf("error in batch send counter: %w", err)
+		return returnErr
+	}
+
+	return nil
+}
+
+// RunHTTP запускает агент по сбору метрик системы, который в соответсвии с заданной
+// в конфигурации интервалами времени собирает и отсылает метрики системы на Http сервер.
+func RunHTTP(ctx context.Context, sigs chan os.Signal, config *Config) error {
 	var pollCount int
 	var memStats runtime.MemStats
+	var finalErr error
 
-	config, err := GetConfig()
-	if err != nil {
-		return err
+	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
+	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
+
+	var interrupt bool
+	var signal os.Signal
+	client := getRetryClient()
+	for !interrupt {
+		select {
+		case <-pollTicker.C:
+			runtime.ReadMemStats(&memStats)
+			pollCount++
+		case <-reportTicker.C:
+			err := sendReportByHTTP(client, &memStats, pollCount, config)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+				continue
+			}
+			pollCount = 0
+
+		case signal = <-sigs:
+			interrupt = true
+			err := sendReportByHTTP(client, &memStats, pollCount, config)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+			}
+			finalErr = fmt.Errorf("agent get signal %v", signal)
+
+		case <-ctx.Done():
+			interrupt = true
+			err := sendReportByHTTP(client, &memStats, pollCount, config)
+			if err != nil {
+				fmt.Printf("error in report stats: %s\n", err.Error())
+			}
+			finalErr = errors.New("cancel context")
+		}
 	}
+	return finalErr
+}
+
+func RunGRPC(ctx context.Context, sigs chan os.Signal, config *Config) (err error) {
+	conn, err := grpc.NewClient(config.GRPCPort, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		return fmt.Errorf("error in create gRPC client: %w", err)
+	}
+	defer func() {
+		err = conn.Close()
+	}()
+
+	go func() {
+		<-sigs
+
+		if err := conn.Close(); err != nil {
+			fmt.Println(fmt.Errorf("error in close gRPC connection: %w", err).Error())
+		}
+	}()
+	handlerClient := pb.NewBatchMetricHandlerClient(conn)
+
+	err = sendMetricsByGRPC(ctx, sigs, handlerClient, config)
+
+	return nil
+}
+
+func sendMetricsByGRPC(ctx context.Context, sigs chan os.Signal,
+	client pb.BatchMetricHandlerClient, config *Config) error {
+	var pollCount int
+	var memStats runtime.MemStats
+	var finalErr error
+
 	pollTicker := time.NewTicker(time.Duration(config.PollInterval) * time.Second)
 	reportTicker := time.NewTicker(time.Duration(config.ReportInterval) * time.Second)
 
 	var interrupt bool
 	var signal os.Signal
 	for !interrupt {
-		fmt.Printf("interrupt: %v\n", interrupt)
 		select {
 		case <-pollTicker.C:
 			runtime.ReadMemStats(&memStats)
 			pollCount++
 		case <-reportTicker.C:
-			sendInfo := prepareStatsForSend(&memStats)
-			client := getRetryClient()
-
-			// Err = SendGauge(client, sendInfo, config)
-			// if err != nil {
-			//	log.Printf("error in send gauge: %v\n", err)
-			//	continue
-			// }
-			//
-			// err = SendCounter(client, pollCount, config)
-			// if err != nil {
-			//	log.Printf("error in send counter: %v\n", err)
-			//	continue
-			// }.
-
-			err = BatchSendGauge(client, sendInfo, config)
+			err := sendReportByGRPC(ctx, client, &memStats, pollCount)
 			if err != nil {
-				log.Printf("error in batch send gauge: %v\n", err)
+				fmt.Printf("error in report stats: %s\n", err.Error())
 				continue
 			}
-
-			err = BatchSendCounter(client, pollCount, config)
-			if err != nil {
-				log.Printf("error in batch send counter: %v\n", err)
-				continue
-			}
-
 			pollCount = 0
 
 		case signal = <-sigs:
 			interrupt = true
-			sendInfo := prepareStatsForSend(&memStats)
-			client := getRetryClient()
-
-			// Err = SendGauge(client, sendInfo, config)
-			// if err != nil {
-			//	log.Printf("error in send gauge: %v\n", err)
-			//	continue
-			// }
-			//
-			// err = SendCounter(client, pollCount, config)
-			// if err != nil {
-			//	log.Printf("error in send counter: %v\n", err)
-			//	continue
-			// }.
-
-			err = BatchSendGauge(client, sendInfo, config)
+			err := sendReportByGRPC(ctx, client, &memStats, pollCount)
 			if err != nil {
-				log.Printf("error in batch send gauge: %v\n", err)
-				continue
+				fmt.Printf("error in report stats: %s\n", err.Error())
 			}
-
-			err = BatchSendCounter(client, pollCount, config)
+			finalErr = fmt.Errorf("agent get signal %v", signal)
+		case <-ctx.Done():
+			interrupt = true
+			err := sendReportByGRPC(ctx, client, &memStats, pollCount)
 			if err != nil {
-				log.Printf("error in batch send counter: %v\n", err)
-				continue
+				fmt.Printf("error in report stats: %s\n", err.Error())
 			}
+			finalErr = errors.New("cancel context")
 		}
 	}
-	return fmt.Errorf("agent get signal %v", signal)
+	return finalErr
 }

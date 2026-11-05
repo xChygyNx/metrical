@@ -2,16 +2,20 @@ package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/sethgrid/pester"
 
+	pb "github.com/xChygyNx/metrical/internal/proto"
 	"github.com/xChygyNx/metrical/internal/server/types"
 )
 
@@ -21,10 +25,31 @@ const (
 	contentEncoding      = "Content-Encoding"
 	contentEncodingValue = "gzip"
 	countGaugeMetrics    = 28
+	dnsTestAddress       = "8.8.8.8:80"
+	getIPErrorText       = "error in get own IP address: %w"
+	realIPHeader         = "X-Real-IP"
 	responseStatusMsg    = "response Status: "
 	responseHeadersMsg   = "response Headers: "
 	responseBodyMsg      = "response Body: "
 )
+
+// GetOutboundIP возвращает IP адрес хоста, на котором запущем агент.
+func GetOutboundIP() (ip net.IP, err error) {
+	conn, err := net.Dial("udp", dnsTestAddress)
+	if err != nil {
+		return nil, fmt.Errorf("error in set UDP connection: %w", err)
+	}
+	defer func() {
+		err = conn.Close()
+	}()
+
+	localAddr, ok := conn.LocalAddr().(*net.UDPAddr)
+	if !ok {
+		return nil, fmt.Errorf("error in get own IP address: %w", err)
+	}
+
+	return localAddr.IP, nil
+}
 
 // SendGauge отправляет по одной собранные метрики типа gauge на сервер. При ошибке отправки
 // повторяет отправку заданное в системеколичество раз (для смены данного параметра требуется
@@ -56,6 +81,11 @@ func SendGauge(client *pester.Client, sendInfo map[string]float64, config *Confi
 		}
 		req.Header.Set(contentType, contentTypeValue)
 		req.Header.Set(contentEncoding, contentEncodingValue)
+		ip, err := GetOutboundIP()
+		if err != nil {
+			return fmt.Errorf(getIPErrorText, err)
+		}
+		req.Header.Set(realIPHeader, ip.String())
 		resp, err := client.Do(req)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -117,6 +147,11 @@ func SendCounter(client *pester.Client, pollCount int, config *Config) (err erro
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	ip, err := GetOutboundIP()
+	if err != nil {
+		return fmt.Errorf(getIPErrorText, err)
+	}
+	req.Header.Set(realIPHeader, ip.String())
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -146,7 +181,7 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	for attr, value := range sendInfo {
 		metricInfo := types.Metrics{
 			ID:    attr,
-			MType: "gauge",
+			MType: GAUGE,
 			Value: &value,
 		}
 		sendData = append(sendData, metricInfo)
@@ -176,6 +211,11 @@ func BatchSendGauge(client *pester.Client, sendInfo map[string]float64, config *
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	ip, err := GetOutboundIP()
+	if err != nil {
+		return fmt.Errorf(getIPErrorText, err)
+	}
+	req.Header.Set(realIPHeader, ip.String())
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send http Request by http Client: %w", err)
@@ -212,7 +252,7 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *Config) (err
 	sendData := make([]types.Metrics, 0, 1)
 	metricInfo := types.Metrics{
 		ID:    "PollCount",
-		MType: "counter",
+		MType: COUNTER,
 		Delta: &pollCount64,
 	}
 
@@ -239,6 +279,11 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *Config) (err
 	}
 	req.Header.Set(contentType, contentTypeValue)
 	req.Header.Set(contentEncoding, contentEncodingValue)
+	ip, err := GetOutboundIP()
+	if err != nil {
+		return fmt.Errorf(getIPErrorText, err)
+	}
+	req.Header.Set(realIPHeader, ip.String())
 	resp, err := client.Do(req)
 	if err != nil {
 		return
@@ -255,4 +300,30 @@ func BatchSendCounter(client *pester.Client, pollCount int, config *Config) (err
 	}
 	log.Println(responseBodyMsg, string(body))
 	return
+}
+
+func sendReportByGRPC(ctx context.Context, client pb.BatchMetricHandlerClient, gauges *runtime.MemStats,
+	counterValue int) error {
+	requestData := make([]*pb.Metric, 0, 10)
+	sendInfo := prepareStatsForSend(gauges)
+
+	for k, v := range sendInfo {
+		requestData = append(requestData, &pb.Metric{
+			Id:    k,
+			Value: v,
+			MType: GAUGE,
+		})
+	}
+	requestData = append(requestData, &pb.Metric{
+		Id:    "PollCount",
+		Delta: int64(counterValue),
+		MType: GAUGE,
+	})
+	resp, err := client.SaveBatchMetrics(ctx, &pb.BatchMetricRequest{Metrics: requestData})
+	if err != nil {
+		//log.Printf("Status of gRPC request: %v", resp.Status)
+		return fmt.Errorf("error in save BatchMetrics by gRPC: %w", err)
+	}
+	log.Printf("Response of gRPC server: %v | Status: %v", resp.Metrics, resp.Status)
+	return nil
 }

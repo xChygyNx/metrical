@@ -12,7 +12,8 @@ import (
 // из командной строки.
 type Config struct {
 	RSAPublicKey   string   // Путь до файла с публичным ключом.
-	ConfigFile     string   // JSON файл с конфигурацией сервера
+	ConfigFile     string   // JSON файл с конфигурацией сервера.
+	GRPCPort       string   // gRPC порт.
 	HostPort       HostPort // хост и порт для отправки собранных метрик в формате "host:port".
 	PollInterval   int      // интервал времени для сбора метрик в секундах.
 	ReportInterval int      // интервал времени для отправки метрик на сервер в секундах.
@@ -22,6 +23,7 @@ type Config struct {
 type TmpConfig struct {
 	RSAPublicKey   string `json:"crypto_key"`      // Путь до файла с публичным ключом.
 	HostPort       string `json:"address"`         // хост и порт для отправки собранных метрик в формате "host:port".
+	GRPCPort       string `json:"grpc_port"`       // gRPC порт
 	PollInterval   int    `json:"poll_interval"`   // интервал времени для сбора метрик в секундах.
 	ReportInterval int    `json:"report_interval"` // интервал времени для отправки метрик на сервер в секундах.
 }
@@ -60,6 +62,7 @@ func parseFlag() *Config {
 	defaultReportInterval := 10
 	pollInterval := flag.Int("p", defaultPollInterval, "Interval of collect metrics in seconds")
 	reportInterval := flag.Int("r", defaultReportInterval, "Interval of send metrics on server in seconds")
+	gRPCPort := flag.String("t", "", "Trusted subnet")
 	publicRSAKey := flag.String("crypto-key", "", "Path to RSA public key")
 
 	hostPort := new(HostPort)
@@ -68,6 +71,7 @@ func parseFlag() *Config {
 	flag.Parse()
 	agentConfig.PollInterval = *pollInterval
 	agentConfig.ReportInterval = *reportInterval
+	agentConfig.GRPCPort = *gRPCPort
 	agentConfig.RSAPublicKey = *publicRSAKey
 
 	if hostPort.Host == "" && hostPort.Port == 0 {
@@ -75,5 +79,9 @@ func parseFlag() *Config {
 		hostPort.Port = 8080
 	}
 	agentConfig.HostPort = *hostPort
+	if agentConfig.GRPCPort == "" {
+		agentConfig.GRPCPort = ":" + strconv.Itoa(agentConfig.HostPort.Port+1)
+	}
+
 	return agentConfig
 }
