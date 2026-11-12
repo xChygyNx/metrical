@@ -85,7 +85,7 @@ func GetConfig() (config *Config, err error) {
 		config.PollInterval = res
 	}
 
-	reportInterval, ok := os.LookupEnv("POLL_INTERVAL")
+	reportInterval, ok := os.LookupEnv("REPORT_INTERVAL")
 	if ok {
 		res, err := strconv.Atoi(reportInterval)
 		if err != nil {
